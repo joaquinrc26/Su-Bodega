@@ -25,12 +25,12 @@ export const metadata: Metadata = {
     template: "%s | SU BODEGA",
   },
   description: "La mejor selección para tu ocasión especial",
-  metadataBase: new URL("https://subodega.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   openGraph: {
     title: "SU BODEGA",
     description: "La mejor selección para tu ocasión especial",
     type: "website",
-    url: "https://subodega.com",
+    url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   },
 };
 

@@ -324,6 +324,8 @@ export default function AddWineForm() {
               <div>
                 <label className="block text-sm font-medium mb-2 text-amber-100/80">Seleccionar uva existente</label>
                 <select
+                  aria-label="Seleccionar tipo de uva existente"
+                  title="Seleccionar tipo de uva existente"
                   value={selectedGrapeId ?? ''}
                   onChange={(e) => setSelectedGrapeId(e.target.value || null)}
                   className="w-full border border-gold/20 rounded-lg p-3 bg-black/30 text-amber-50 focus:border-gold focus:outline-none"

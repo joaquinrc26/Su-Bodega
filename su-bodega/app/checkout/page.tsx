@@ -198,6 +198,7 @@ export default function CheckoutPage() {
                     type="text"
                     value={buyer.name}
                     disabled
+                    title="Nombre del comprador"
                     className="w-full bg-black/20 border border-gold/20 rounded-lg p-3 text-amber-50 cursor-not-allowed opacity-70"
                   />
                 </div>
@@ -207,6 +208,7 @@ export default function CheckoutPage() {
                     type="email"
                     value={buyer.email}
                     disabled
+                    title="Email del comprador"
                     className="w-full bg-black/20 border border-gold/20 rounded-lg p-3 text-amber-50 cursor-not-allowed opacity-70"
                   />
                 </div>
@@ -217,6 +219,7 @@ export default function CheckoutPage() {
                       type="tel"
                       value={buyer.phone}
                       disabled
+                      title="Teléfono del comprador"
                       className="w-full bg-black/20 border border-gold/20 rounded-lg p-3 text-amber-50 cursor-not-allowed opacity-70"
                     />
                   </div>
@@ -237,6 +240,7 @@ export default function CheckoutPage() {
                     defaultValue={buyer.address || ''}
                     required
                     placeholder="Av. Santa Fe 1500"
+                    title="Calle y número"
                     className="w-full bg-black/20 border border-gold/20 rounded-lg p-3 text-amber-50 placeholder-amber-100/30 focus:border-gold focus:outline-none"
                   />
                 </div>
@@ -249,6 +253,7 @@ export default function CheckoutPage() {
                       defaultValue={buyer.city || ''}
                       required
                       placeholder="Buenos Aires"
+                      title="Ciudad"
                       className="w-full bg-black/20 border border-gold/20 rounded-lg p-3 text-amber-50 placeholder-amber-100/30 focus:border-gold focus:outline-none"
                     />
                   </div>
@@ -260,6 +265,7 @@ export default function CheckoutPage() {
                       defaultValue={buyer.zipCode || ''}
                       required
                       placeholder="C1425"
+                      title="Código postal"
                       className="w-full bg-black/20 border border-gold/20 rounded-lg p-3 text-amber-50 placeholder-amber-100/30 focus:border-gold focus:outline-none"
                     />
                   </div>

@@ -85,6 +85,8 @@ export default function CartPage() {
                           type="number"
                           value={item.quantity}
                           onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 1)}
+                          aria-label={`Cantidad de ${item.name}`}
+                          title={`Cantidad de ${item.name}`}
                           className="w-12 text-center bg-transparent border-x border-amber-100/20 py-1"
                           min="1"
                         />

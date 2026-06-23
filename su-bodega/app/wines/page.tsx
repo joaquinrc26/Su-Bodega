@@ -264,6 +264,9 @@ export default function WinesPage() {
             <div>
               <label className="block text-xs uppercase tracking-[0.22em] text-amber-200/80 mb-2">Ano</label>
               <select
+                id="filter-year"
+                aria-label="Filtrar vinos por año"
+                title="Filtrar vinos por año"
                 value={filterYear}
                 onChange={(e) => setFilterYear(e.target.value)}
                 className="w-full rounded-lg border border-amber-100/20 bg-black/35 px-3 py-3 text-amber-50 focus:outline-none focus:border-gold"
@@ -280,6 +283,9 @@ export default function WinesPage() {
             <div>
               <label className="block text-xs uppercase tracking-[0.22em] text-amber-200/80 mb-2">Region</label>
               <select
+                id="filter-region"
+                aria-label="Filtrar vinos por región"
+                title="Filtrar vinos por región"
                 value={filterRegion}
                 onChange={(e) => setFilterRegion(e.target.value)}
                 className="w-full rounded-lg border border-amber-100/20 bg-black/35 px-3 py-3 text-amber-50 focus:outline-none focus:border-gold"
@@ -296,6 +302,9 @@ export default function WinesPage() {
             <div>
               <label className="block text-xs uppercase tracking-[0.22em] text-amber-200/80 mb-2">Uva</label>
               <select
+                id="filter-grape"
+                aria-label="Filtrar vinos por tipo de uva"
+                title="Filtrar vinos por tipo de uva"
                 value={filterGrape}
                 onChange={(e) => setFilterGrape(e.target.value)}
                 className="w-full rounded-lg border border-amber-100/20 bg-black/35 px-3 py-3 text-amber-50 focus:outline-none focus:border-gold"
@@ -314,6 +323,9 @@ export default function WinesPage() {
             <div>
               <label className="block text-xs uppercase tracking-[0.22em] text-amber-200/80 mb-2">Ordenar</label>
               <select
+                id="sort-by"
+                aria-label="Ordenar vinos"
+                title="Ordenar vinos"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
                 className="w-full rounded-lg border border-amber-100/20 bg-black/35 px-3 py-3 text-amber-50 focus:outline-none focus:border-gold"

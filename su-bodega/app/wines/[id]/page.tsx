@@ -208,8 +208,11 @@ export default function WineDetailPage({ params }: { params: Promise<{ id: strin
               <div className="flex gap-3 overflow-x-auto pb-2">
                 {wine.photos.map((photo, idx) => (
                   <button
+                        type="button"
                     key={photo.id}
                     onClick={() => setSelectedImageIndex(idx)}
+                        aria-label={`Ver imagen ${idx + 1} de ${wine.name}`}
+                        title={`Ver imagen ${idx + 1} de ${wine.name}`}
                     className={`flex-shrink-0 w-20 h-20 rounded border-2 overflow-hidden transition-all ${
                       selectedImageIndex === idx ? 'border-gold' : 'border-amber-100/20 hover:border-gold'
                     }`}
@@ -257,6 +260,8 @@ export default function WineDetailPage({ params }: { params: Promise<{ id: strin
                     type="number"
                     value={quantity}
                     onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    aria-label={`Cantidad de ${wine.name}`}
+                    title={`Cantidad de ${wine.name}`}
                     className="w-16 text-center bg-transparent border-x border-amber-100/18 py-3"
                     min="1"
                   />
