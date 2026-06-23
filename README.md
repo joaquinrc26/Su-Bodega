@@ -390,7 +390,7 @@ vercel
 
 ## 👥 Equipo
 
-**Desarrollado por**: GitHub Copilot + Usuario  
+**Desarrollado por**: JoaquinRC26  
 **Fecha de inicio**: Junio 2026  
 **Estado**: MVP completado (Fase 5)
 
