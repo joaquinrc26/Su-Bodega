@@ -1,0 +1,261 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { useCart } from '@/lib/cart-context';
+
+type WinePhoto = { id: string; url: string };
+type GrapeType = { id: string; name: string };
+type Wine = {
+  id: string;
+  name: string;
+  year: number;
+  price?: number;
+  region?: string;
+  bodega?: string;
+  maridaje?: string;
+  description?: string;
+  grapeType?: GrapeType | null;
+  photos: WinePhoto[];
+};
+
+export default function WinesPage() {
+  const { addToCart, itemCount } = useCart();
+  const [wines, setWines] = useState<Wine[]>([]);
+  const [grapes, setGrapes] = useState<GrapeType[]>([]);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [year, setYear] = useState<string>('');
+  const [grape, setGrape] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const years = useMemo(() => {
+    const uniqueYears = Array.from(new Set(wines.map((wine) => wine.year)));
+    return uniqueYears.sort((a, b) => b - a);
+  }, [wines]);
+
+  useEffect(() => {
+    fetch('/api/grapes')
+      .then((res) => res.json())
+      .then(setGrapes)
+      .catch(() => setGrapes([]));
+  }, []);
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      setMessage(null);
+      try {
+        const params = new URLSearchParams();
+        if (year) params.set('year', year);
+        if (grape) params.set('grape', grape);
+        const res = await fetch(`/api/wines?${params.toString()}`);
+        const data = await res.json();
+        setWines(data);
+      } catch {
+        setMessage('No se pudieron cargar los vinos.');
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [year, grape]);
+
+  return (
+    <main className="min-h-screen bg-slate-950">
+      <div className="container-premium py-12">
+        {/* Header mejorado con carrito */}
+        <div className="mb-12 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <section>
+            <span className="text-sm uppercase tracking-[0.4em] text-gold">Catálogo Su Bodega</span>
+            <h1 className="text-4xl md:text-5xl font-playfair font-semibold mt-4 mb-2">
+              Vinos guardados y por tipo de uva.
+            </h1>
+            <p className="text-lg max-w-2xl text-slate-200/90 leading-8">
+              Descubrí los vinos más importantes de nuestros clientes y sumá tus etiquetas con botella y año. Filtrá por año,
+              por uva y encontrá el vino ideal para tu mesa.
+            </p>
+          </section>
+          <Link
+            href="/cart"
+            className="flex items-center gap-2 px-6 py-3 bg-gold hover:bg-gold/90 text-coal font-semibold rounded transition-colors self-start md:self-auto whitespace-nowrap"
+          >
+            🛒 Carrito
+            {itemCount > 0 && <span className="bg-coal text-gold px-2 py-1 rounded text-sm font-bold">{itemCount}</span>}
+          </Link>
+        </div>
+
+        {/* Filtros + Catálogo */}
+        <section className="grid gap-6 md:grid-cols-[250px_1fr] mb-10">
+          <aside className="card-premium p-6 glass">
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-xl font-semibold mb-3">Filtrar</h2>
+                <label className="block text-sm text-slate-300 mb-2">Año</label>
+                <select
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
+                  className="w-full border rounded p-3 bg-transparent"
+                >
+                  <option value="">Todos los años</option>
+                  {years.map((y) => (
+                    <option key={y} value={String(y)}>
+                      {y}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm text-slate-300 mb-2">Tipo de uva</label>
+                <select
+                  value={grape}
+                  onChange={(e) => setGrape(e.target.value)}
+                  className="w-full border rounded p-3 bg-transparent"
+                >
+                  <option value="">Todas las uvas</option>
+                  {grapes.map((g) => (
+                    <option key={g.id} value={g.name}>
+                      {g.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setYear('');
+                  setGrape('');
+                }}
+                className="btn-premium w-full"
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          </aside>
+
+          <div className="space-y-6">
+            {/* Encabezado de resultados */}
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm uppercase tracking-[0.3em] text-gold">Resultados</p>
+                <p className="text-slate-300">
+                  {loading ? 'Cargando vinos...' : `${wines.length} vino(s) encontrados`}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Link href="/add-wine" className="btn-premium">
+                  Cargar nuevo vino
+                </Link>
+                <Link href="/" className="px-4 py-3 border rounded text-slate-100 border-slate-600 hover:border-gold">
+                  Inicio
+                </Link>
+              </div>
+            </div>
+
+            {loading && <div className="card-premium p-6 glass">Cargando catálogo...</div>}
+            {message && <div className="card-premium p-6 glass text-amber-100">{message}</div>}
+
+            {/* Grid de vinos */}
+            <div className="grid gap-6 md:grid-cols-2">
+              {wines.map((wine) => (
+                <article key={wine.id} className="card-premium overflow-hidden glass group flex flex-col">
+                  {/* Imagen del producto */}
+                  <div className="relative h-72 bg-coal overflow-hidden">
+                    {wine.photos[0] ? (
+                      <Image
+                        src={wine.photos[0].url}
+                        alt={wine.name}
+                        fill
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-slate-400">Sin imagen</div>
+                    )}
+                    {/* Botón favorito */}
+                    <button
+                      onClick={() => {
+                        const newFavorites = new Set(favorites);
+                        if (newFavorites.has(wine.id)) {
+                          newFavorites.delete(wine.id);
+                        } else {
+                          newFavorites.add(wine.id);
+                        }
+                        setFavorites(newFavorites);
+                      }}
+                      className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 text-2xl rounded-full p-2 transition-all"
+                    >
+                      {favorites.has(wine.id) ? '❤️' : '🤍'}
+                    </button>
+                  </div>
+
+                  {/* Detalles del producto */}
+                  <div className="p-6 space-y-3 flex-grow flex flex-col">
+                    {/* Meta info */}
+                    <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.2em] text-gold">
+                      {wine.grapeType?.name ?? 'Sin uva'}
+                      <span>·</span>
+                      <span>{wine.year}</span>
+                      {wine.region && (
+                        <>
+                          <span>·</span>
+                          <span>{wine.region}</span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Nombre */}
+                    <h3 className="text-xl font-semibold leading-tight">{wine.name}</h3>
+
+                    {/* Bodega */}
+                    {wine.bodega && <p className="text-sm text-slate-400">{wine.bodega}</p>}
+
+                    {/* Descripción */}
+                    <p className="text-slate-300 leading-6 text-sm">{wine.description || 'Descripción no disponible.'}</p>
+
+                    {/* Maridaje */}
+                    {wine.maridaje && <p className="text-xs text-gold/70 italic">🍽️ Maridaje: {wine.maridaje}</p>}
+
+                    {/* Precio y botón */}
+                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-700">
+                      {wine.price ? (
+                        <span className="text-2xl font-bold text-gold">${wine.price.toLocaleString('es-AR')}</span>
+                      ) : (
+                        <span className="text-sm text-slate-400">Precio no disponible</span>
+                      )}
+                      {wine.price && (
+                        <button
+                          onClick={() =>
+                            addToCart({
+                              id: wine.id,
+                              name: wine.name,
+                              price: wine.price!,
+                              quantity: 1,
+                              image: wine.photos[0]?.url,
+                              year: wine.year,
+                            })
+                          }
+                          className="btn-premium text-sm py-2 px-4"
+                        >
+                          Agregar al carrito
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            {!loading && wines.length === 0 && (
+              <div className="card-premium p-6 glass text-slate-200">
+                No hay vinos guardados aún. Cargá tu primera botella en el formulario.
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}

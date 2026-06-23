@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Wine {
+  id         String     @id @default(cuid())
+  name       String
+  year       Int
+  price      Decimal    @default(0)
+  region     String?    @default("Sin especificar")
+  bodega     String?
+  maridaje   String?    @default("Versatile")
+  description String?
+  grapeType  GrapeType? @relation(fields: [grapeTypeId], references: [id])
+  grapeTypeId String?
+  photos     Photo[]
+  createdAt  DateTime   @default(now())
+}
+
+model GrapeType {
+  id    String @id @default(cuid())
+  name  String @unique
+  wines Wine[]
+}
+
+model Photo {
+  id     String @id @default(cuid())
+  url    String
+  wine   Wine   @relation(fields: [wineId], references: [id])
+  wineId String
+}
+
+model AdminUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // Almacenado en plaintext por simplicidad (en producción usar bcrypt)
+  name      String
+  createdAt DateTime @default(now())
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  customerEmail   String
+  customerName    String
+  customerPhone   String
+  shippingAddress String
+  shippingCity    String
+  shippingZip     String
+  shippingCost    Decimal     @default(0)
+  total           Decimal
+  paymentMethod   String      // "transferencia", "efectivo", "mercadopago"
+  status          String      @default("pending")  // "pending", "approved", "rejected", "cancelled"
+  mpPreferenceId  String?     // ID de preferencia de MercadoPago
+  mpPaymentId     String?     // ID de pago de MercadoPago
+  items           OrderItem[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model OrderItem {
+  id      String  @id @default(cuid())
+  orderId String
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  wineId  String
+  wineName String
+  wineYear Int
+  price   Decimal
+  quantity Int
+}
