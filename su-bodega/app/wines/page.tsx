@@ -178,10 +178,10 @@ export default function WinesPage() {
   return (
     <main className="min-h-screen buyer-bodegon-bg text-amber-50">
       <div className="container-premium py-10 md:py-14">
-        <header className="buyer-paper rounded-2xl p-6 md:p-10 mb-8 md:mb-10">
+        <header className="wine-hero grain-overlay p-6 md:p-10 mb-8 md:mb-10">
           <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
             <div className="space-y-4">
-              <span className="inline-block text-xs uppercase tracking-[0.38em] text-gold">Casa tradicional</span>
+              <span className="wine-section-label">Casa tradicional</span>
               <h1 className="text-5xl md:text-7xl font-playfair leading-none">Su Bodega</h1>
               <p className="text-xl md:text-2xl text-amber-100/90 font-serif">Los mejores Vinos del pais</p>
               <p className="max-w-2xl text-amber-100/80 leading-7">
@@ -206,14 +206,16 @@ export default function WinesPage() {
             </div>
           </div>
 
-          <nav className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="wine-divider mt-8 mb-6" />
+
+          <nav className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <button
               type="button"
               onClick={() => setSection('vinos')}
               className={`rounded-xl border px-4 py-3 text-left transition ${
                 section === 'vinos'
-                  ? 'border-gold bg-bordeaux/70 text-gold'
-                  : 'border-amber-100/20 bg-black/25 text-amber-100 hover:border-gold/70'
+                  ? 'border-gold bg-black/30 text-gold shadow-[0_18px_40px_rgba(0,0,0,0.2)]'
+                  : 'border-amber-100/20 bg-black/15 text-amber-100 hover:border-gold/70'
               }`}
             >
               <p className="text-sm uppercase tracking-[0.2em]">Seccion</p>
@@ -224,8 +226,8 @@ export default function WinesPage() {
               onClick={() => setSection('guardados')}
               className={`rounded-xl border px-4 py-3 text-left transition ${
                 section === 'guardados'
-                  ? 'border-gold bg-bordeaux/70 text-gold'
-                  : 'border-amber-100/20 bg-black/25 text-amber-100 hover:border-gold/70'
+                  ? 'border-gold bg-black/30 text-gold shadow-[0_18px_40px_rgba(0,0,0,0.2)]'
+                  : 'border-amber-100/20 bg-black/15 text-amber-100 hover:border-gold/70'
               }`}
             >
               <p className="text-sm uppercase tracking-[0.2em]">Seccion</p>
@@ -236,8 +238,8 @@ export default function WinesPage() {
               onClick={() => setSection('whiskey')}
               className={`rounded-xl border px-4 py-3 text-left transition ${
                 section === 'whiskey'
-                  ? 'border-gold bg-bordeaux/70 text-gold'
-                  : 'border-amber-100/20 bg-black/25 text-amber-100 hover:border-gold/70'
+                  ? 'border-gold bg-black/30 text-gold shadow-[0_18px_40px_rgba(0,0,0,0.2)]'
+                  : 'border-amber-100/20 bg-black/15 text-amber-100 hover:border-gold/70'
               }`}
             >
               <p className="text-sm uppercase tracking-[0.2em]">Seccion</p>
@@ -246,7 +248,7 @@ export default function WinesPage() {
           </nav>
         </header>
 
-        <section className="buyer-paper rounded-2xl p-5 md:p-7 mb-8">
+        <section className="wine-card p-5 md:p-7 mb-8">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
             <div className="lg:col-span-2">
               <label className="block text-xs uppercase tracking-[0.22em] text-amber-200/80 mb-2">Buscar</label>
@@ -344,6 +346,7 @@ export default function WinesPage() {
 
         <section className="mb-5 flex flex-col md:flex-row md:items-end md:justify-between gap-2">
           <div>
+            <span className="wine-section-label">Colección visible</span>
             <h2 className="text-3xl font-playfair">{sectionCopy.title}</h2>
             <p className="text-amber-100/70 mt-1">{sectionCopy.subtitle}</p>
           </div>
@@ -367,7 +370,7 @@ export default function WinesPage() {
               <Link
                 key={wine.id}
                 href={`/wines/${wine.id}`}
-                className="buyer-paper rounded-2xl overflow-hidden group hover:translate-y-[-2px] transition-transform"
+                className="wine-card overflow-hidden group hover:translate-y-[-4px] transition-transform"
               >
                 <div className="relative h-64 bg-black/40 overflow-hidden">
                   {wine.photos[0] ? (
@@ -382,7 +385,7 @@ export default function WinesPage() {
                   )}
                 </div>
 
-                <div className="p-4 flex flex-col gap-3">
+                <div className="p-5 flex flex-col gap-4">
                   <div>
                     <h3 className="text-xl font-playfair leading-tight">{wine.name}</h3>
                     <p className="text-sm text-amber-100/70 mt-1">
@@ -393,11 +396,16 @@ export default function WinesPage() {
                     {wine.bodega && <p className="text-xs text-amber-100/65 mt-1">Bodega: {wine.bodega}</p>}
                   </div>
 
+                  <div className="wine-divider" />
+
                   <div className="flex items-center justify-between mt-auto">
-                    <p className="text-lg font-semibold text-gold">${(wine.price || 0).toLocaleString('es-AR')}</p>
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.24em] text-amber-100/55">Precio</p>
+                      <p className="text-lg font-semibold text-gold">${(wine.price || 0).toLocaleString('es-AR')}</p>
+                    </div>
                     <button
                       onClick={(e) => handleAddToCart(e, wine)}
-                      className="rounded-full border border-gold/60 px-4 py-2 text-sm hover:border-gold"
+                      className="rounded-full border border-gold/60 px-4 py-2 text-sm hover:border-gold hover:bg-gold/10"
                     >
                       Agregar
                     </button>

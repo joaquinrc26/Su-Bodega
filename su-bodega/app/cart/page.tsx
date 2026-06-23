@@ -16,14 +16,15 @@ export default function CartPage() {
   const finalTotal = subtotal + shippingCost;
 
   return (
-    <main className="min-h-screen bg-slate-950">
+    <main className="min-h-screen buyer-bodegon-bg text-amber-50">
       <div className="container-premium py-12">
         {/* Header */}
-        <section className="mb-10">
+        <section className="wine-hero grain-overlay mb-10 p-6 md:p-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <span className="text-sm uppercase tracking-[0.4em] text-gold">Tu carrito</span>
+              <span className="wine-section-label">Tu carrito</span>
               <h1 className="text-4xl md:text-5xl font-playfair font-semibold mt-2">Revisar compra</h1>
+              <p className="mt-3 max-w-2xl text-amber-100/72">Un resumen claro antes de pasar al checkout con cuenta buyer. Ajusta cantidades, revisa el envío y continúa con una compra segura.</p>
             </div>
             <Link href="/wines" className="text-gold hover:text-gold/80 underline">
               ← Volver al catálogo
@@ -32,8 +33,8 @@ export default function CartPage() {
         </section>
 
         {cart.length === 0 ? (
-          <div className="card-premium p-12 glass text-center">
-            <p className="text-xl text-slate-300 mb-6">Tu carrito está vacío</p>
+          <div className="wine-card p-12 text-center">
+            <p className="text-xl text-amber-100/74 mb-6">Tu carrito está vacío</p>
             <Link href="/wines" className="btn-premium">
               Explorar catálogo
             </Link>
@@ -45,11 +46,11 @@ export default function CartPage() {
               {cart.map((item) => (
                 <div
                   key={item.id}
-                  className="card-premium p-6 glass flex gap-4 md:flex-row flex-col"
+                  className="wine-card p-6 flex gap-4 md:flex-row flex-col"
                 >
                   {/* Imagen */}
                   {item.image && (
-                    <div className="flex-shrink-0 w-full md:w-24 h-24 bg-slate-800 rounded overflow-hidden">
+                    <div className="flex-shrink-0 w-full md:w-24 h-24 bg-black/30 rounded overflow-hidden">
                       <Image
                         src={item.image}
                         alt={item.name}
@@ -65,18 +66,18 @@ export default function CartPage() {
                     <div className="flex justify-between items-start mb-2">
                       <div>
                         <h3 className="text-lg font-semibold">{item.name}</h3>
-                        <p className="text-sm text-slate-400">Cosecha {item.year}</p>
+                        <p className="text-sm text-amber-100/60">Cosecha {item.year}</p>
                       </div>
                       <p className="text-lg font-semibold text-gold">${item.price.toLocaleString('es-AR')}</p>
                     </div>
 
                     {/* Cantidad */}
                     <div className="flex items-center gap-3 mt-4">
-                      <label className="text-sm text-slate-300">Cantidad:</label>
-                      <div className="flex items-center border border-slate-600 rounded">
+                      <label className="text-sm text-amber-100/72">Cantidad:</label>
+                      <div className="flex items-center border border-amber-100/20 rounded">
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="px-3 py-1 hover:bg-slate-700"
+                          className="px-3 py-1 hover:bg-white/5"
                         >
                           −
                         </button>
@@ -84,12 +85,12 @@ export default function CartPage() {
                           type="number"
                           value={item.quantity}
                           onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 1)}
-                          className="w-12 text-center bg-transparent border-x border-slate-600 py-1"
+                          className="w-12 text-center bg-transparent border-x border-amber-100/20 py-1"
                           min="1"
                         />
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="px-3 py-1 hover:bg-slate-700"
+                          className="px-3 py-1 hover:bg-white/5"
                         >
                           +
                         </button>
@@ -113,17 +114,18 @@ export default function CartPage() {
               {/* Botón limpiar carrito */}
               <button
                 onClick={clearCart}
-                className="text-sm text-slate-400 hover:text-slate-200 underline"
+                className="text-sm text-amber-100/62 hover:text-amber-100 underline"
               >
                 Vaciar carrito
               </button>
             </div>
 
             {/* Resumen */}
-            <div className="card-premium p-6 glass h-fit sticky top-20">
-              <h2 className="text-xl font-semibold mb-4">Resumen</h2>
+            <div className="wine-card p-6 h-fit sticky top-20">
+              <span className="wine-section-label">Resumen</span>
+              <h2 className="text-xl font-semibold mb-4 mt-4">Tu selección</h2>
 
-              <div className="space-y-3 mb-6 pb-6 border-b border-slate-700">
+              <div className="space-y-3 mb-6 pb-6 border-b border-gold/10">
                 <div className="flex justify-between text-sm">
                   <span>Subtotal ({cart.length} items)</span>
                   <span>${subtotal.toLocaleString('es-AR')}</span>
@@ -144,22 +146,22 @@ export default function CartPage() {
               </div>
 
               <div className="mb-6">
-                <label className="text-sm text-slate-300 mb-2 block">Código promocional</label>
+                <label className="text-sm text-amber-100/72 mb-2 block">Código promocional</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={coupon}
                     onChange={(e) => setCoupon(e.target.value.toUpperCase())}
                     placeholder="DESCUENTO10"
-                    className="flex-grow px-3 py-2 bg-slate-800 border border-slate-600 rounded text-sm focus:outline-none focus:border-gold"
+                    className="flex-grow px-3 py-2 bg-black/25 border border-amber-100/20 rounded text-sm focus:outline-none focus:border-gold"
                   />
-                  <button className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm">
+                  <button className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded text-sm border border-amber-100/15">
                     Aplicar
                   </button>
                 </div>
               </div>
 
-              <div className="bg-gold/10 p-3 rounded mb-6">
+              <div className="bg-gold/10 p-4 rounded-2xl mb-6 border border-gold/15">
                 <div className="text-xl font-semibold text-gold">
                   Total: ${finalTotal.toLocaleString('es-AR')}
                 </div>
@@ -172,12 +174,12 @@ export default function CartPage() {
                 Proceder al pago
               </button>
 
-              <Link href="/wines" className="block w-full text-center px-4 py-3 border border-slate-600 rounded hover:border-gold text-slate-100">
+              <Link href="/wines" className="block w-full text-center px-4 py-3 border border-amber-100/20 rounded hover:border-gold text-amber-50">
                 Continuar comprando
               </Link>
 
               {/* Info promo */}
-              <div className="mt-6 pt-6 border-t border-slate-700 text-xs text-slate-400 space-y-2">
+              <div className="mt-6 pt-6 border-t border-gold/10 text-xs text-amber-100/60 space-y-2">
                 <div className="flex gap-2">
                   <span className="text-gold">✓</span>
                   <span>Envío gratis a CABA y AMBA desde $200.000</span>

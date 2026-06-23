@@ -131,9 +131,9 @@ export default function BuyerOrdersPage() {
   return (
     <main className="min-h-screen buyer-bodegon-bg text-amber-50">
       <div className="container-premium py-10 md:py-14">
-        <div className="mb-10 flex flex-col gap-4 rounded-3xl border border-gold/15 bg-black/35 p-6 backdrop-blur md:flex-row md:items-center md:justify-between">
+        <div className="wine-hero grain-overlay mb-10 flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.35em] text-gold/80">Mi cuenta</p>
+            <p className="wine-section-label">Mi cuenta</p>
             <h1 className="mt-3 text-4xl font-playfair md:text-5xl">Tus compras</h1>
             <p className="mt-2 text-amber-100/70">
               {data.buyer.name} · {data.buyer.email}
@@ -155,7 +155,7 @@ export default function BuyerOrdersPage() {
         </div>
 
         {data.orders.length === 0 ? (
-          <div className="card-premium rounded-3xl p-10 text-center">
+          <div className="wine-card rounded-3xl p-10 text-center">
             <h2 className="text-3xl font-playfair text-gold">Todavía no tienes compras</h2>
             <p className="mx-auto mt-4 max-w-xl text-amber-100/70">
               Cuando completes tu primera orden la verás acá con sus productos, total y método de pago.
@@ -167,7 +167,7 @@ export default function BuyerOrdersPage() {
         ) : (
           <div className="space-y-6">
             {data.orders.map((order) => (
-              <section key={order.id} className="card-premium rounded-3xl p-6 md:p-8">
+              <section key={order.id} className="wine-card rounded-3xl p-6 md:p-8">
                 <div className="flex flex-col gap-4 border-b border-gold/10 pb-5 md:flex-row md:items-start md:justify-between">
                   <div>
                     <p className="text-sm uppercase tracking-[0.2em] text-gold/80">Orden #{order.id.slice(-8).toUpperCase()}</p>
