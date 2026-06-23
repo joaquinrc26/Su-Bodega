@@ -88,6 +88,6 @@ export async function POST(request: NextRequest) {
 }
 
 // GET también para validar el webhook
-export async function GET(request: NextRequest) {
+export async function GET() {
   return NextResponse.json({ status: 'webhook active' });
 }

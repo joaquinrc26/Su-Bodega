@@ -1,7 +1,6 @@
 'use client';
 
 import { Suspense } from 'react';
-import Link from 'next/link';
 import PaymentSuccessContent from './content';
 
 export default function PaymentSuccessPage() {
