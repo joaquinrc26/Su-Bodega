@@ -89,9 +89,11 @@ export default function WineDetailPage({ params }: { params: Promise<{ id: strin
 
   if (loading) {
     return (
-      <main className="container-premium py-12 min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-2xl text-slate-400">Cargando vino...</p>
+      <main className="min-h-screen buyer-bodegon-bg">
+        <div className="container-premium py-12 min-h-screen flex items-center justify-center">
+        <div className="wine-card p-10 text-center">
+          <p className="text-2xl text-amber-100/70">Cargando vino...</p>
+        </div>
         </div>
       </main>
     );
@@ -99,12 +101,14 @@ export default function WineDetailPage({ params }: { params: Promise<{ id: strin
 
   if (!wine) {
     return (
-      <main className="container-premium py-12 min-h-screen flex items-center justify-center">
-        <div className="text-center">
+      <main className="min-h-screen buyer-bodegon-bg">
+        <div className="container-premium py-12 min-h-screen flex items-center justify-center">
+        <div className="wine-card p-10 text-center">
           <p className="text-2xl text-slate-400 mb-4">Vino no encontrado</p>
           <Link href="/wines" className="btn-premium">
             ← Volver al catálogo
           </Link>
+        </div>
         </div>
       </main>
     );
@@ -130,10 +134,10 @@ export default function WineDetailPage({ params }: { params: Promise<{ id: strin
   };
 
   return (
-    <main className="min-h-screen bg-slate-950">
+    <main className="min-h-screen buyer-bodegon-bg text-amber-50">
       <div className="container-premium py-12">
         {/* Breadcrumb */}
-        <div className="mb-8 flex items-center gap-2 text-sm text-slate-400">
+        <div className="mb-8 flex items-center gap-2 text-sm text-amber-100/55">
           <Link href="/wines" className="hover:text-gold">
             Catálogo
           </Link>
@@ -142,12 +146,41 @@ export default function WineDetailPage({ params }: { params: Promise<{ id: strin
         </div>
 
         {/* Main Content */}
+        <section className="wine-hero grain-overlay p-6 md:p-8 lg:p-10 mb-12">
+          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+            <div>
+              <span className="wine-section-label">Ficha de producto</span>
+              <h1 className="mt-4 text-4xl md:text-6xl font-playfair font-semibold leading-tight">{wine.name}</h1>
+              <p className="mt-3 text-lg text-amber-100/76">
+                {wine.bodega || 'Selección de Su Bodega'}
+                {wine.region ? ` · ${wine.region}` : ''}
+                {` · ${wine.year}`}
+              </p>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-1">
+              <div className="wine-stat">
+                <p className="text-[11px] uppercase tracking-[0.26em] text-gold/72">Varietal</p>
+                <p className="mt-2 text-lg font-playfair">{wine.grapeType?.name || 'Sin especificar'}</p>
+              </div>
+              <div className="wine-stat">
+                <p className="text-[11px] uppercase tracking-[0.26em] text-gold/72">Maridaje</p>
+                <p className="mt-2 text-lg font-playfair">{wine.maridaje && wine.maridaje !== 'Versatile' ? 'Recomendado' : 'Versátil'}</p>
+              </div>
+              <div className="wine-stat">
+                <p className="text-[11px] uppercase tracking-[0.26em] text-gold/72">Compra</p>
+                <p className="mt-2 text-lg font-playfair">Checkout con cuenta buyer</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <div className="grid gap-12 md:grid-cols-2 mb-12">
           {/* Galería de Imágenes */}
           <div className="space-y-4">
             {/* Imagen Principal */}
             <div
-              className="relative h-96 md:h-[500px] rounded-lg overflow-hidden bg-slate-800 border border-slate-700 cursor-pointer group"
+              className="relative h-96 md:h-[500px] rounded-[24px] overflow-hidden bg-black/30 border border-gold/12 cursor-pointer group wine-card"
               onClick={() => setShowImageModal(true)}
             >
               {mainImage ? (
@@ -161,7 +194,7 @@ export default function WineDetailPage({ params }: { params: Promise<{ id: strin
                 <div className="flex items-center justify-center h-full text-slate-500">Sin imagen</div>
               )}
               {hasMultipleImages && (
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/45">
                   <div className="text-white text-center">
                     <div className="text-3xl mb-2">🔍</div>
                     <p className="text-sm">Expandir galería</p>
@@ -178,7 +211,7 @@ export default function WineDetailPage({ params }: { params: Promise<{ id: strin
                     key={photo.id}
                     onClick={() => setSelectedImageIndex(idx)}
                     className={`flex-shrink-0 w-20 h-20 rounded border-2 overflow-hidden transition-all ${
-                      selectedImageIndex === idx ? 'border-gold' : 'border-slate-600 hover:border-gold'
+                      selectedImageIndex === idx ? 'border-gold' : 'border-amber-100/20 hover:border-gold'
                     }`}
                   >
                     <Image src={photo.url} alt={`${wine.name} ${idx + 1}`} width={80} height={80} className="w-full h-full object-cover" />
@@ -190,42 +223,33 @@ export default function WineDetailPage({ params }: { params: Promise<{ id: strin
 
           {/* Información del Producto */}
           <div className="space-y-6">
-            {/* Meta */}
-            <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-gold mb-2">
-                {wine.region || 'Sin especificar'} • {wine.year}
-              </p>
-              <h1 className="text-5xl font-playfair font-semibold mb-2">{wine.name}</h1>
-              {wine.bodega && <p className="text-lg text-slate-400">{wine.bodega}</p>}
-            </div>
-
             {/* Precio */}
             {wine.price ? (
-              <div className="border-y border-slate-700 py-6">
-                <p className="text-sm text-slate-400 mb-1">Precio</p>
+              <div className="wine-card p-6">
+                <p className="text-sm text-amber-100/60 mb-1 uppercase tracking-[0.2em]">Precio</p>
                 <p className="text-5xl font-bold text-gold">${wine.price.toLocaleString('es-AR')}</p>
               </div>
             ) : (
-              <div className="border-y border-slate-700 py-6">
-                <p className="text-slate-400">Precio no disponible</p>
+              <div className="wine-card p-6">
+                <p className="text-amber-100/60">Precio no disponible</p>
               </div>
             )}
 
             {/* Maridaje */}
             {wine.maridaje && wine.maridaje !== 'Versatile' && (
-              <div className="card-premium p-4 glass">
-                <p className="text-sm text-gold mb-2">🍽️ RECOMENDACIÓN DE MARIDAJE</p>
-                <p className="text-slate-100">{wine.maridaje}</p>
+              <div className="wine-card p-5">
+                <p className="text-sm text-gold mb-2 uppercase tracking-[0.2em]">Recomendación de maridaje</p>
+                <p className="text-amber-50 leading-7">{wine.maridaje}</p>
               </div>
             )}
 
             {/* Selector de Cantidad y Botón */}
-            <div className="space-y-4">
+            <div className="wine-card p-6 space-y-5">
               <div className="flex items-center gap-4">
-                <div className="flex items-center border border-slate-600 rounded">
+                <div className="flex items-center border border-amber-100/18 rounded">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-4 py-3 hover:bg-slate-800 transition-colors"
+                    className="px-4 py-3 hover:bg-white/5 transition-colors"
                   >
                     −
                   </button>
@@ -233,17 +257,17 @@ export default function WineDetailPage({ params }: { params: Promise<{ id: strin
                     type="number"
                     value={quantity}
                     onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-16 text-center bg-transparent border-x border-slate-600 py-3"
+                    className="w-16 text-center bg-transparent border-x border-amber-100/18 py-3"
                     min="1"
                   />
                   <button
                     onClick={() => setQuantity(quantity + 1)}
-                    className="px-4 py-3 hover:bg-slate-800 transition-colors"
+                    className="px-4 py-3 hover:bg-white/5 transition-colors"
                   >
                     +
                   </button>
                 </div>
-                <span className="text-sm text-slate-400">
+                <span className="text-sm text-amber-100/62">
                   Total: ${((wine.price || 0) * quantity).toLocaleString('es-AR')}
                 </span>
               </div>
@@ -252,15 +276,15 @@ export default function WineDetailPage({ params }: { params: Promise<{ id: strin
                 🛒 Agregar al carrito
               </button>
 
-              {message && <p className="text-center text-green-400 text-sm">{message}</p>}
+              {message && <p className="text-center text-green-300 text-sm">{message}</p>}
 
-              <Link href="/cart" className="block w-full text-center px-4 py-3 border border-gold text-gold hover:bg-gold/10 rounded transition-colors">
+              <Link href="/cart" className="block w-full text-center px-4 py-3 border border-gold text-gold hover:bg-gold/10 rounded-full transition-colors">
                 Ver carrito
               </Link>
             </div>
 
             {/* Info Envío */}
-            <div className="card-premium p-4 glass text-sm space-y-2">
+            <div className="wine-card p-4 text-sm space-y-2">
               <div className="flex gap-2">
                 <span>🚚</span>
                 <span>Envío gratis a CABA y AMBA desde $200.000</span>
@@ -276,9 +300,10 @@ export default function WineDetailPage({ params }: { params: Promise<{ id: strin
         {/* Descripción Expandida */}
         {wine.description && (
           <section className="mb-12">
-            <h2 className="text-3xl font-playfair font-semibold mb-6">Descripción</h2>
-            <div className="card-premium p-8 glass">
-              <p className="text-slate-200 leading-8 text-lg">{wine.description}</p>
+            <span className="wine-section-label">Notas</span>
+            <h2 className="text-3xl font-playfair font-semibold mb-6 mt-4">Descripción</h2>
+            <div className="wine-card p-8">
+              <p className="text-amber-100/78 leading-8 text-lg">{wine.description}</p>
             </div>
           </section>
         )}
@@ -286,12 +311,13 @@ export default function WineDetailPage({ params }: { params: Promise<{ id: strin
         {/* Productos Relacionados */}
         {relatedWines.length > 0 && (
           <section>
-            <h2 className="text-3xl font-playfair font-semibold mb-8">Vinos Relacionados</h2>
+            <span className="wine-section-label">Sugerencias</span>
+            <h2 className="text-3xl font-playfair font-semibold mb-8 mt-4">Vinos Relacionados</h2>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
               {relatedWines.map((relatedWine) => (
                 <Link key={relatedWine.id} href={`/wines/${relatedWine.id}`}>
-                  <article className="card-premium overflow-hidden glass group hover:border-gold transition-all h-full cursor-pointer">
-                    <div className="relative h-64 bg-slate-800 overflow-hidden">
+                  <article className="wine-card overflow-hidden group hover:border-gold transition-all h-full cursor-pointer">
+                    <div className="relative h-64 bg-black/20 overflow-hidden">
                       {relatedWine.photos[0] ? (
                         <Image
                           src={relatedWine.photos[0].url}
@@ -300,7 +326,7 @@ export default function WineDetailPage({ params }: { params: Promise<{ id: strin
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                         />
                       ) : (
-                        <div className="flex items-center justify-center h-full text-slate-400">Sin imagen</div>
+                        <div className="flex items-center justify-center h-full text-amber-100/45">Sin imagen</div>
                       )}
                     </div>
                     <div className="p-4">

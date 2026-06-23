@@ -71,17 +71,53 @@ export default function BuyerAuthPage() {
 
   return (
     <main className="min-h-screen buyer-bodegon-bg text-amber-50">
-      <div className="container-premium py-12 md:py-20 flex items-center justify-center">
-        <div className="card-premium p-8 md:p-12 max-w-md w-full rounded-2xl">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-playfair font-semibold mb-2">
+      <div className="container-premium py-12 md:py-20">
+        <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-stretch">
+          <section className="wine-hero grain-overlay p-8 md:p-10 rounded-[28px]">
+            <span className="wine-section-label">Cuenta buyer</span>
+            <h1 className="mt-5 text-4xl md:text-5xl font-playfair font-semibold leading-tight">
               {mode === 'login' ? 'Ingresa a tu Cuenta' : 'Crear Cuenta'}
             </h1>
-            <p className="text-amber-100/70">
-              {mode === 'login' ? 'Continúa con tu compra' : 'Completá tu registro para comprar'}
+            <p className="mt-4 max-w-xl text-lg leading-8 text-amber-100/76">
+              {mode === 'login'
+                ? 'Accede para continuar con tu compra, revisar órdenes anteriores y mantener tus datos de entrega listos.'
+                : 'Regístrate para comprar, guardar tus datos y construir tu historial de compras dentro de Su Bodega.'}
             </p>
-          </div>
+
+            <div className="mt-8 grid gap-4 md:grid-cols-3 lg:grid-cols-1">
+              <div className="wine-stat">
+                <p className="text-[11px] uppercase tracking-[0.26em] text-gold/72">Compra segura</p>
+                <p className="mt-2 text-xl font-playfair">Cuenta obligatoria</p>
+              </div>
+              <div className="wine-stat">
+                <p className="text-[11px] uppercase tracking-[0.26em] text-gold/72">Historial</p>
+                <p className="mt-2 text-xl font-playfair">Tus órdenes en un solo lugar</p>
+              </div>
+              <div className="wine-stat">
+                <p className="text-[11px] uppercase tracking-[0.26em] text-gold/72">Entrega</p>
+                <p className="mt-2 text-xl font-playfair">Datos guardados para futuras compras</p>
+              </div>
+            </div>
+
+            <div className="wine-divider my-8" />
+
+            <div className="space-y-3 text-sm text-amber-100/66">
+              <p>Públicas: inicio, catálogo, detalle, carrito, checkout y estados de pago.</p>
+              <p>Buyer: acceso y mis compras.</p>
+              <p>Admin: login, dashboard y carga manual.</p>
+            </div>
+          </section>
+
+          <div className="wine-card p-8 md:p-12 w-full rounded-[28px] self-center">
+            <div className="text-center mb-8">
+              <span className="wine-section-label">Acceso</span>
+              <h2 className="text-3xl md:text-4xl font-playfair font-semibold mt-4 mb-2">
+                {mode === 'login' ? 'Continúa tu compra' : 'Completa tu registro'}
+              </h2>
+              <p className="text-amber-100/70">
+                {mode === 'login' ? 'Ingresa para pasar al checkout.' : 'Tu cuenta buyer se crea en segundos.'}
+              </p>
+            </div>
 
           {/* Formulario */}
           <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className="space-y-4">
@@ -178,6 +214,7 @@ export default function BuyerAuthPage() {
               ← Volver al catálogo
             </Link>
           </div>
+        </div>
         </div>
       </div>
     </main>
