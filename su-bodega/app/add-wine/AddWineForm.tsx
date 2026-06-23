@@ -194,120 +194,139 @@ export default function AddWineForm() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
-      <div className="container-premium py-12">
-        {/* Header */}
-        <div className="mb-12">
-          <span className="text-sm uppercase tracking-[0.4em] text-gold">Panel Administrativo</span>
-          <h1 className="text-4xl md:text-5xl font-playfair font-semibold mt-4 mb-2">Agregar Vino</h1>
-          <p className="text-lg text-slate-300 max-w-2xl">
-            Completa todos los campos del vino que deseas agregar al catálogo. Las fotos y la descripción son opcionales pero
-            recomendadas.
-          </p>
-          <p className="text-sm text-slate-400 mt-3 max-w-2xl">
-            Todas las secciones visibles para comprador son manuales. Para categorizar, usa la palabra &quot;Guardado&quot; o
-            &quot;Whiskey/Whisky&quot; en el nombre, descripción o bodega al cargar el producto.
-          </p>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <Link
-              href="/admin/dashboard"
-              className="px-4 py-3 border rounded text-slate-100 border-slate-600 hover:border-gold"
-            >
-              Volver al panel admin
-            </Link>
-            <Link
-              href="/wines"
-              className="px-4 py-3 border rounded text-slate-100 border-slate-600 hover:border-gold"
-            >
-              Ir a vista comprador
-            </Link>
+    <div className="min-h-screen buyer-bodegon-bg text-amber-50">
+      <div className="container-premium py-10 md:py-14">
+        <section className="wine-hero grain-overlay mb-12 p-7 md:p-10">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <span className="wine-section-label">Carga de productos</span>
+              <h1 className="mt-4 text-5xl md:text-6xl font-playfair text-amber-50">Agregar Vino</h1>
+              <p className="mt-3 max-w-2xl text-lg leading-8 text-amber-100/74">
+                Completa el formulario con todos los detalles del vino. Fotos, región, maridaje y descripción harán que tu catálogo sea rico y accesible.
+              </p>
+              <p className="mt-4 text-sm text-amber-100/62">
+                💡 Tip: Usa &quot;Guardado&quot; o &quot;Whiskey&quot; en nombre/bodega para que aparezca en esas secciones del catálogo.
+              </p>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-1">
+              <div className="wine-stat">
+                <p className="text-[11px] uppercase tracking-[0.26em] text-gold/72">Campos</p>
+                <p className="mt-2 text-lg font-playfair">5 secciones</p>
+              </div>
+              <div className="wine-stat">
+                <p className="text-[11px] uppercase tracking-[0.26em] text-gold/72">Fotos</p>
+                <p className="mt-2 text-lg font-playfair">Una o varias</p>
+              </div>
+              <div className="wine-stat">
+                <p className="text-[11px] uppercase tracking-[0.26em] text-gold/72">Guardado</p>
+                <p className="mt-2 text-lg font-playfair">Inmediato</p>
+              </div>
+            </div>
           </div>
+        </section>
+
+        <div className="flex flex-wrap gap-3 mb-8">
+          <Link
+            href="/admin/dashboard"
+            className="rounded-full border border-gold/20 px-5 py-3 text-sm text-amber-50 hover:border-gold hover:bg-gold/5 transition"
+          >
+            ← Volver al panel
+          </Link>
+          <Link
+            href="/wines"
+            className="rounded-full border border-gold/20 px-5 py-3 text-sm text-amber-50 hover:border-gold hover:bg-gold/5 transition"
+          >
+            Ver catálogo buyer
+          </Link>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Sección 1: Información Básica */}
-          <section className="card-premium p-8 glass">
-            <h2 className="text-2xl font-semibold mb-6 text-gold">📋 Información Básica</h2>
+          <section className="wine-card p-8 md:p-10">
+            <span className="wine-section-label">Paso 1 de 5</span>
+            <h2 className="text-2xl font-playfair font-semibold mb-6 mt-4 text-amber-50">Información Básica</h2>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               <div>
-                <label className="block text-sm font-medium mb-2">Nombre del Vino *</label>
+                <label className="block text-sm font-medium mb-2 text-amber-100/80">Nombre del Vino *</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ej: Malbec Reserve"
-                  className="w-full border border-slate-600 rounded p-3 bg-slate-800/50 focus:outline-none focus:border-gold"
+                  className="w-full border border-gold/20 rounded-lg p-3 bg-black/30 text-amber-50 placeholder-amber-100/40 focus:border-gold focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Año *</label>
+                <label className="block text-sm font-medium mb-2 text-amber-100/80">Año *</label>
                 <input
                   type="number"
                   value={year as number | ''}
                   onChange={(e) => setYear(Number(e.target.value))}
                   placeholder="2020"
-                  className="w-full border border-slate-600 rounded p-3 bg-slate-800/50 focus:outline-none focus:border-gold"
+                  className="w-full border border-gold/20 rounded-lg p-3 bg-black/30 text-amber-50 placeholder-amber-100/40 focus:border-gold focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Precio ($) *</label>
+                <label className="block text-sm font-medium mb-2 text-amber-100/80">Precio ($) *</label>
                 <input
                   type="number"
                   step="0.01"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                   placeholder="5000"
-                  className="w-full border border-slate-600 rounded p-3 bg-slate-800/50 focus:outline-none focus:border-gold"
+                  className="w-full border border-gold/20 rounded-lg p-3 bg-black/30 text-amber-50 placeholder-amber-100/40 focus:border-gold focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Región</label>
+                <label className="block text-sm font-medium mb-2 text-amber-100/80">Región</label>
                 <input
                   type="text"
                   value={region}
                   onChange={(e) => setRegion(e.target.value)}
                   placeholder="Ej: Mendoza, Salta"
-                  className="w-full border border-slate-600 rounded p-3 bg-slate-800/50 focus:outline-none focus:border-gold"
+                  className="w-full border border-gold/20 rounded-lg p-3 bg-black/30 text-amber-50 placeholder-amber-100/40 focus:border-gold focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Bodega</label>
+                <label className="block text-sm font-medium mb-2 text-amber-100/80">Bodega</label>
                 <input
                   type="text"
                   value={bodega}
                   onChange={(e) => setBodega(e.target.value)}
                   placeholder="Ej: Achaval Ferrer"
-                  className="w-full border border-slate-600 rounded p-3 bg-slate-800/50 focus:outline-none focus:border-gold"
+                  className="w-full border border-gold/20 rounded-lg p-3 bg-black/30 text-amber-50 placeholder-amber-100/40 focus:border-gold focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Maridaje</label>
+                <label className="block text-sm font-medium mb-2 text-amber-100/80">Maridaje</label>
                 <input
                   type="text"
                   value={maridaje}
                   onChange={(e) => setMaridaje(e.target.value)}
                   placeholder="Ej: Carnes, Quesos"
-                  className="w-full border border-slate-600 rounded p-3 bg-slate-800/50 focus:outline-none focus:border-gold"
+                  className="w-full border border-gold/20 rounded-lg p-3 bg-black/30 text-amber-50 placeholder-amber-100/40 focus:border-gold focus:outline-none"
                 />
               </div>
             </div>
           </section>
 
           {/* Sección 2: Tipo de Uva */}
-          <section className="card-premium p-8 glass">
-            <h2 className="text-2xl font-semibold mb-6 text-gold">🍇 Tipo de Uva</h2>
+          <section className="wine-card p-8 md:p-10">
+            <span className="wine-section-label">Paso 2 de 5</span>
+            <h2 className="text-2xl font-playfair font-semibold mb-6 mt-4 text-amber-50">Tipo de Uva</h2>
             <div className="grid gap-6 md:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium mb-2">Seleccionar uva existente</label>
+                <label className="block text-sm font-medium mb-2 text-amber-100/80">Seleccionar uva existente</label>
                 <select
                   value={selectedGrapeId ?? ''}
                   onChange={(e) => setSelectedGrapeId(e.target.value || null)}
-                  className="w-full border border-slate-600 rounded p-3 bg-slate-800/50 focus:outline-none focus:border-gold"
+                  className="w-full border border-gold/20 rounded-lg p-3 bg-black/30 text-amber-50 focus:border-gold focus:outline-none"
                 >
                   <option value="">-- Seleccionar --</option>
                   {grapes.map((grape) => (
@@ -319,14 +338,14 @@ export default function AddWineForm() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">O crear nueva uva</label>
+                <label className="block text-sm font-medium mb-2 text-amber-100/80">O crear nueva uva</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     placeholder="Nombre de la uva"
                     value={newGrapeName}
                     onChange={(e) => setNewGrapeName(e.target.value)}
-                    className="flex-1 border border-slate-600 rounded p-3 bg-slate-800/50 focus:outline-none focus:border-gold"
+                    className="flex-1 border border-gold/20 rounded-lg p-3 bg-black/30 text-amber-50 placeholder-amber-100/40 focus:border-gold focus:outline-none"
                   />
                   <button type="button" onClick={createGrape} className="btn-premium px-4">
                     Crear
@@ -337,26 +356,29 @@ export default function AddWineForm() {
           </section>
 
           {/* Sección 3: Descripción */}
-          <section className="card-premium p-8 glass">
-            <h2 className="text-2xl font-semibold mb-6 text-gold">📝 Descripción</h2>
+          <section className="wine-card p-8 md:p-10">
+            <span className="wine-section-label">Paso 3 de 5</span>
+            <h2 className="text-2xl font-playfair font-semibold mb-6 mt-4 text-amber-50">Descripción</h2>
+            <label className="block text-sm font-medium mb-3 text-amber-100/80">Detalles y notas de cata</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe los aromas, sabores, notas, etc."
               rows={5}
-              className="w-full border border-slate-600 rounded p-3 bg-slate-800/50 focus:outline-none focus:border-gold"
+              className="w-full border border-gold/20 rounded-lg p-3 bg-black/30 text-amber-50 placeholder-amber-100/40 focus:border-gold focus:outline-none"
             />
           </section>
 
           {/* Sección 4: Fotos */}
-          <section className="card-premium p-8 glass">
-            <h2 className="text-2xl font-semibold mb-6 text-gold">📸 Fotos</h2>
+          <section className="wine-card p-8 md:p-10">
+            <span className="wine-section-label">Paso 4 de 5</span>
+            <h2 className="text-2xl font-playfair font-semibold mb-6 mt-4 text-amber-50">Fotos</h2>
 
             <div className="mb-6">
-              <label className="block text-sm font-medium mb-3">
+              <label className="block text-sm font-medium mb-3 text-amber-100/80">
                 Selecciona una o varias fotos (recomendado: mínimo 1)
               </label>
-              <div className="border-2 border-dashed border-slate-600 rounded p-6 text-center hover:border-gold transition-colors cursor-pointer">
+              <div className="border-2 border-dashed border-gold/30 rounded-lg p-8 text-center hover:border-gold hover:bg-gold/5 transition-all cursor-pointer">
                 <input
                   type="file"
                   multiple
@@ -366,11 +388,12 @@ export default function AddWineForm() {
                   id="file-input"
                 />
                 <label htmlFor="file-input" className="cursor-pointer block">
-                  <div className="text-3xl mb-2">📁</div>
-                  <p className="text-sm text-slate-300">
+                  <div className="text-4xl mb-3">📸</div>
+                  <p className="text-sm text-amber-100/80">
                     Arrastra fotos aquí o{' '}
                     <span className="text-gold font-semibold">haz clic para seleccionar</span>
                   </p>
+                  <p className="text-xs text-amber-100/60 mt-2">JPG, PNG · Máx 5 fotos</p>
                 </label>
               </div>
             </div>
@@ -378,12 +401,12 @@ export default function AddWineForm() {
             {/* Previsualizaciones */}
             {filePreviews.length > 0 && (
               <div>
-                <p className="text-sm font-medium mb-4">Fotos seleccionadas ({filePreviews.length})</p>
+                <p className="text-sm font-medium mb-4 text-amber-100/80">Fotos seleccionadas ({filePreviews.length})</p>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {filePreviews.map((preview, index) => (
                     <div
                       key={index}
-                      className="relative group rounded-lg overflow-hidden border border-slate-600 bg-slate-800"
+                      className="relative group rounded-lg overflow-hidden border border-gold/15 bg-black/20"
                     >
                       <Image
                         src={preview.preview}
@@ -407,42 +430,47 @@ export default function AddWineForm() {
           </section>
 
           {/* Sección 5: Acciones */}
-          <section className="flex gap-3 flex-col md:flex-row">
-            <button
-              disabled={uploading}
-              type="submit"
-              className="btn-premium flex-1 md:flex-none py-4 text-lg font-semibold disabled:opacity-50"
-            >
-              {uploading ? '⏳ Guardando...' : '✅ Guardar Vino'}
-            </button>
+          <section className="wine-card p-8 md:p-10">
+            <span className="wine-section-label">Paso 5 de 5</span>
+            <h2 className="text-2xl font-playfair font-semibold mb-6 mt-4 text-amber-50">Guardar Producto</h2>
 
-            <button
-              type="button"
-              onClick={() => {
-                setName('');
-                setYear(new Date().getFullYear());
-                setDescription('');
-                setPrice('');
-                setRegion('');
-                setBodega('');
-                setMaridaje('');
-                setSelectedGrapeId(null);
-                setNewGrapeName('');
-                setFilePreviews([]);
-                setMessage(null);
-              }}
-              className="px-6 py-4 border border-slate-600 rounded text-slate-100 hover:border-gold transition-colors"
-            >
-              🔄 Limpiar formulario
-            </button>
-          </section>
+            <div className="space-y-4">
+              <button
+                disabled={uploading}
+                type="submit"
+                className="btn-premium w-full py-4 text-lg font-semibold disabled:opacity-50"
+              >
+                {uploading ? '⏳ Guardando...' : '✅ Guardar Vino'}
+              </button>
 
-          {/* Mensajes */}
-          {message && (
-            <div className={`card-premium p-4 rounded ${message.includes('✅') ? 'bg-green-900/30 text-green-200' : 'bg-amber-900/30 text-amber-200'}`}>
-              {message}
+              <button
+                type="button"
+                onClick={() => {
+                  setName('');
+                  setYear(new Date().getFullYear());
+                  setDescription('');
+                  setPrice('');
+                  setRegion('');
+                  setBodega('');
+                  setMaridaje('');
+                  setSelectedGrapeId(null);
+                  setNewGrapeName('');
+                  setFilePreviews([]);
+                  setMessage(null);
+                }}
+                className="w-full px-6 py-3 border border-gold/20 rounded-full text-amber-50 hover:border-gold hover:bg-gold/5 transition-all"
+              >
+                🔄 Limpiar formulario
+              </button>
             </div>
-          )}
+
+            {/* Mensajes */}
+            {message && (
+              <div className={`mt-6 p-5 rounded-lg ${message.includes('✅') ? 'bg-green-900/30 border border-green-500/30 text-green-200' : 'bg-amber-900/30 border border-amber-500/30 text-amber-200'}`}>
+                <p className="text-sm font-medium">{message}</p>
+              </div>
+            )}
+          </section>
         </form>
       </div>
     </div>
