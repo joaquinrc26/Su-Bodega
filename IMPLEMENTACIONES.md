@@ -3,12 +3,12 @@
 ## Proyecto: E-commerce Premium de Vinos 🍇
 
 **Fecha**: 23 de Junio, 2026  
-**Versión**: 1.1 - MVP (Fases 1, 2, 3, 4 y 5 completadas)  
+**Versión**: 1.2 - MVP (Fases 1, 2, 3, 4, 5 y cuenta buyer completadas)  
 **Stack Tecnológico**: 
 - **Frontend**: Next.js 15 (App Router + Turbopack)
 - **UI**: React 19, TypeScript 5, Tailwind CSS 4
 - **Backend/BD**: Prisma 5 ORM, SQLite
-- **Autenticación**: Cookie-based
+- **Autenticación**: Cookie-based (admin + buyer)
 - **Almacenamiento**: Cloudinary
 
 **Objetivo Principal**: Plataforma de venta de vinos con carga exclusiva del administrador
@@ -25,9 +25,10 @@
 6. [Fase 3: Página de Checkout](#fase-3-página-de-checkout)
 7. [Fase 4: Búsqueda y Filtros Avanzados](#fase-4-búsqueda-y-filtros-avanzados)
 8. [Fase 5: MercadoPago Payment Gateway](#fase-5-mercadopago-payment-gateway)
-9. [API Routes](#api-routes)
-10. [Componentes Principales](#componentes-principales)
-11. [Estructura de Carpetas](#estructura-de-carpetas)
+9. [Fase 6: Cuenta Buyer e Historial de Compras](#fase-6-cuenta-buyer-e-historial-de-compras)
+10. [API Routes](#api-routes)
+11. [Componentes Principales](#componentes-principales)
+12. [Estructura de Carpetas](#estructura-de-carpetas)
 
 ---
 
@@ -45,8 +46,9 @@
 ### Características de Seguridad
 
 ✅ Admin-only wine uploads (cookie-based authentication)  
+✅ Buyer-only checkout e historial de compras  
 ✅ Password validation (`ADMIN_PASSWORD` env variable)  
-✅ Protected API routes (`isAdminRequest()` middleware)  
+✅ Protected API routes (`isAdminRequest()` / `getBuyerIdFromCookie()`)  
 ✅ TypeScript strict mode (no implicit `any`)  
 ✅ ESLint enforcement (Next.js best practices)
 
@@ -518,6 +520,82 @@ MERCADOPAGO_WEBHOOK_TOKEN=webhook-secret-123
 - Cambiar TEST token por token de Producción
 - Configurar URL pública para webhooks
 - Usar HTTPS en webhook endpoint
+
+---
+
+## 👤 Fase 6: Cuenta Buyer e Historial de Compras
+
+### 6.1 Autenticación del Comprador
+
+**Archivos**:
+- `app/buyer-auth/page.tsx`
+- `app/api/auth/buyer-login/route.ts`
+- `app/api/auth/buyer-register/route.ts`
+- `app/api/auth/buyer-logout/route.ts`
+- `app/api/buyer/profile/route.ts`
+
+**Características**:
+- ✅ Registro de compradores con nombre, email, contraseña y teléfono opcional
+- ✅ Login del comprador con cookie `su-bodega-buyer`
+- ✅ Logout del comprador con invalidación de cookie
+- ✅ Perfil editable para dirección, ciudad y código postal
+- ✅ Checkout protegido: sin sesión buyer redirige a `/buyer-auth`
+
+### 6.2 Historial de Compras
+
+**Archivos**:
+- `app/buyer/orders/page.tsx`
+- `app/api/buyer/orders/route.ts`
+
+**Flujo**:
+1. El comprador autenticado ingresa a `/buyer/orders`
+2. La página consulta `GET /api/buyer/orders`
+3. Si no hay cookie activa, responde `401` y redirige a `/buyer-auth`
+4. Si hay sesión válida, devuelve comprador + órdenes ordenadas por fecha descendente
+5. La UI muestra productos, total, método de pago, estado y destino de entrega
+
+**Vista del historial**:
+- ✅ Cabecera con identidad del comprador
+- ✅ Botón de cierre de sesión
+- ✅ Estado de la orden (`Pendiente`, `Aprobada`, `Rechazada`, `Cancelada`)
+- ✅ Método de pago (`Transferencia`, `Efectivo`, `Mercado Pago`)
+- ✅ Desglose de productos por orden
+- ✅ Estado vacío cuando todavía no existen compras
+
+### 6.3 Vinculación Buyer → Order
+
+**Archivo**: `prisma/schema.prisma`
+
+```prisma
+model BuyerUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  phone     String?
+  address   String?
+  city      String?
+  zipCode   String?
+  orders    Order[]
+  createdAt DateTime @default(now())
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  buyerId         String?
+  buyer           BuyerUser?  @relation(fields: [buyerId], references: [id])
+  customerEmail   String
+  customerName    String
+  customerPhone   String
+  ...
+}
+```
+
+**Reglas de negocio**:
+- ✅ `POST /api/orders/create` exige buyer autenticado
+- ✅ Valida que `customerEmail` y `customerName` coincidan con la sesión activa
+- ✅ Persiste `buyerId` en cada orden creada
+- ✅ Sin cookie buyer la API responde `401`
 - Verificar firma de webhook (X-Signature header)
 
 ### 5.7 Flujo Completo End-to-End

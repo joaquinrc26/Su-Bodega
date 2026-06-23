@@ -14,6 +14,9 @@ export default function Home() {
             <Link href="/wines" className="btn-premium">
               Ver vinos
             </Link>
+            <Link href="/buyer/orders" className="px-4 py-3 border rounded text-slate-100 border-slate-600 hover:border-gold">
+              Mis compras
+            </Link>
             <Link href="/admin" className="px-4 py-3 border rounded text-slate-100 border-slate-600 hover:border-gold">
               Ingreso admin
             </Link>
