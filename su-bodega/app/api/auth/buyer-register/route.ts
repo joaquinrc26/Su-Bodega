@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { createBuyerCookie } from '@/lib/auth';
+import { hashPassword } from '@/lib/auth';
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
     const newBuyer = await prisma.buyerUser.create({
       data: {
         email,
-        password, // En producción, usar bcrypt
+        password: hashPassword(password),
         name,
         phone: phone || undefined,
       },

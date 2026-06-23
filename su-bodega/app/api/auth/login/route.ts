@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ADMIN_PASSWORD, createAdminCookie } from '@/lib/auth';
+import { ADMIN_PASSWORD, createAdminCookie, hashPassword, verifyPassword } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
@@ -27,8 +27,15 @@ export async function POST(request: Request) {
       where: { email },
     });
 
-    if (!admin || admin.password !== password) {
+    if (!admin || !verifyPassword(password, admin.password)) {
       return new Response('Credenciales inválidas', { status: 401 });
+    }
+
+    if (!admin.password.startsWith('scrypt$')) {
+      await prisma.adminUser.update({
+        where: { email },
+        data: { password: hashPassword(password) },
+      });
     }
 
     const response = NextResponse.json({ 

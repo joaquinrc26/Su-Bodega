@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { createBuyerCookie } from '@/lib/auth';
+import { hashPassword, verifyPassword } from '@/lib/auth';
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -13,8 +14,15 @@ export async function POST(request: Request) {
   try {
     const buyer = await prisma.buyerUser.findUnique({ where: { email } });
 
-    if (!buyer || buyer.password !== password) {
+    if (!buyer || !verifyPassword(password, buyer.password)) {
       return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 });
+    }
+
+    if (!buyer.password.startsWith('scrypt$')) {
+      await prisma.buyerUser.update({
+        where: { email },
+        data: { password: hashPassword(password) },
+      });
     }
 
     const response = NextResponse.json(

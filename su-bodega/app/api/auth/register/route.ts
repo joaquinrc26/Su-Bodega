@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createAdminCookie } from '@/lib/auth';
+import { createAdminCookie, hashPassword } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const newAdmin = await prisma.adminUser.create({
       data: {
         email,
-        password, // En producción usar bcrypt
+        password: hashPassword(password),
         name,
       },
     });

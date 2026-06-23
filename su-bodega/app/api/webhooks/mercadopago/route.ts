@@ -1,8 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+const webhookHits = new Map<string, { count: number; resetAt: number }>();
+
+function isRateLimited(key: string, limit = 20, windowMs = 60_000) {
+  const now = Date.now();
+  const current = webhookHits.get(key);
+
+  if (!current || current.resetAt <= now) {
+    webhookHits.set(key, { count: 1, resetAt: now + windowMs });
+    return false;
+  }
+
+  current.count += 1;
+  webhookHits.set(key, current);
+  return current.count > limit;
+}
+
 export async function POST(request: NextRequest) {
   try {
+    const requestKey = request.headers.get('x-forwarded-for') || request.headers.get('user-agent') || 'webhook';
+
+    if (isRateLimited(requestKey)) {
+      return NextResponse.json({ received: true }, { status: 429 });
+    }
+
     const body = await request.json();
     
     // MercadoPago envía notificaciones con datos en query params o body
