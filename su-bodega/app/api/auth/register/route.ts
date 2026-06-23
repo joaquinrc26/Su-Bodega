@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { createAdminCookie } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,11 +46,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
 
-    response.cookies.set('su-bodega-admin', email, {
-      httpOnly: true,
-      maxAge: 60 * 60 * 24 * 7, // 7 días
-      sameSite: 'strict',
-    });
+    response.headers.set('Set-Cookie', createAdminCookie());
 
     return response;
   } catch (error) {

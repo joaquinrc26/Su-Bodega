@@ -20,22 +20,26 @@ type Wine = {
   photos: WinePhoto[];
 };
 
+type SectionType = 'vinos' | 'guardados' | 'whiskey';
+
+function normalizedText(wine: Wine) {
+  return `${wine.name} ${wine.description || ''} ${wine.bodega || ''} ${wine.grapeType?.name || ''}`.toLowerCase();
+}
+
 export default function WinesPage() {
   const { addToCart, itemCount } = useCart();
   const [wines, setWines] = useState<Wine[]>([]);
   const [grapes, setGrapes] = useState<GrapeType[]>([]);
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  // Filtros y búsqueda
   const [searchName, setSearchName] = useState<string>('');
   const [filterYear, setFilterYear] = useState<string>('');
   const [filterGrape, setFilterGrape] = useState<string>('');
   const [filterRegion, setFilterRegion] = useState<string>('');
   const [sortBy, setSortBy] = useState<'none' | 'price-asc' | 'price-desc' | 'year-asc' | 'year-desc'>('none');
+  const [section, setSection] = useState<SectionType>('vinos');
 
-  // Obtener lista de años y regiones únicos
   const years = useMemo(() => {
     const uniqueYears = Array.from(new Set(wines.map((wine) => wine.year)));
     return uniqueYears.sort((a, b) => b - a);
@@ -46,7 +50,6 @@ export default function WinesPage() {
     return uniqueRegions.sort();
   }, [wines]);
 
-  // Cargar tipos de uva
   useEffect(() => {
     fetch('/api/grapes')
       .then((res) => res.json())
@@ -54,7 +57,6 @@ export default function WinesPage() {
       .catch(() => setGrapes([]));
   }, []);
 
-  // Cargar todos los vinos
   useEffect(() => {
     async function loadWines() {
       setLoading(true);
@@ -64,7 +66,7 @@ export default function WinesPage() {
         const data = await res.json();
         setWines(data);
       } catch {
-        setMessage('No se pudieron cargar los vinos.');
+        setMessage('No se pudieron cargar los productos por ahora.');
         setWines([]);
       } finally {
         setLoading(false);
@@ -73,11 +75,27 @@ export default function WinesPage() {
     loadWines();
   }, []);
 
-  // Filtrar y ordenar vinos
-  const filteredWines = useMemo(() => {
-    let result = [...wines];
+  const sectionWines = useMemo(() => {
+    if (section === 'guardados') {
+      return wines.filter((wine) => normalizedText(wine).includes('guardado'));
+    }
 
-    // Filtro por nombre
+    if (section === 'whiskey') {
+      return wines.filter((wine) => {
+        const text = normalizedText(wine);
+        return text.includes('whisky') || text.includes('whiskey');
+      });
+    }
+
+    return wines.filter((wine) => {
+      const text = normalizedText(wine);
+      return !text.includes('guardado') && !text.includes('whisky') && !text.includes('whiskey');
+    });
+  }, [wines, section]);
+
+  const filteredWines = useMemo(() => {
+    let result = [...sectionWines];
+
     if (searchName.trim()) {
       const search = searchName.toLowerCase();
       result = result.filter(
@@ -88,22 +106,18 @@ export default function WinesPage() {
       );
     }
 
-    // Filtro por año
     if (filterYear) {
       result = result.filter((wine) => wine.year.toString() === filterYear);
     }
 
-    // Filtro por tipo de uva
     if (filterGrape) {
       result = result.filter((wine) => wine.grapeType?.id === filterGrape);
     }
 
-    // Filtro por región
     if (filterRegion) {
       result = result.filter((wine) => wine.region === filterRegion);
     }
 
-    // Ordenamiento
     if (sortBy !== 'none') {
       result.sort((a, b) => {
         const priceA = a.price || 0;
@@ -125,7 +139,28 @@ export default function WinesPage() {
     }
 
     return result;
-  }, [wines, searchName, filterYear, filterGrape, filterRegion, sortBy]);
+  }, [sectionWines, searchName, filterYear, filterGrape, filterRegion, sortBy]);
+
+  const sectionCopy = useMemo(() => {
+    if (section === 'guardados') {
+      return {
+        title: 'Vinos guardados',
+        subtitle: 'Seleccion curada y cargada manualmente por administracion.',
+      };
+    }
+
+    if (section === 'whiskey') {
+      return {
+        title: 'Whiskey',
+        subtitle: 'Seleccion de etiquetas de whiskey cargadas manualmente por administracion.',
+      };
+    }
+
+    return {
+      title: 'Vinos',
+      subtitle: 'Catalogo principal de vinos, cargado manualmente por administracion.',
+    };
+  }, [section]);
 
   const handleAddToCart = (e: React.MouseEvent, wine: Wine) => {
     e.preventDefault();
@@ -140,239 +175,240 @@ export default function WinesPage() {
     });
   };
 
-  const toggleFavorite = (e: React.MouseEvent, id: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setFavorites((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  };
-
   return (
-    <main className="min-h-screen bg-slate-950">
-      <div className="container-premium py-12">
-        {/* Header */}
-        <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <section>
-            <span className="text-sm uppercase tracking-[0.4em] text-gold">Catálogo Su Bodega</span>
-            <h1 className="text-4xl md:text-5xl font-playfair font-semibold mt-4 mb-2">
-              Descubrí nuestros vinos premium
-            </h1>
-            <p className="text-lg max-w-2xl text-slate-200/90 leading-8">
-              Filtrá, buscá y encontrá el vino ideal para tu mesa. Más de 50 etiquetas seleccionadas.
-            </p>
-          </section>
-          <Link
-            href="/cart"
-            className="flex items-center gap-2 px-6 py-3 bg-gold hover:bg-gold/90 text-coal font-semibold rounded transition-colors self-start md:self-auto whitespace-nowrap"
-          >
-            🛒 Carrito
-            {itemCount > 0 && <span className="bg-coal text-gold px-2 py-1 rounded text-sm font-bold">{itemCount}</span>}
-          </Link>
-        </div>
+    <main className="min-h-screen buyer-bodegon-bg text-amber-50">
+      <div className="container-premium py-10 md:py-14">
+        <header className="buyer-paper rounded-2xl p-6 md:p-10 mb-8 md:mb-10">
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+            <div className="space-y-4">
+              <span className="inline-block text-xs uppercase tracking-[0.38em] text-gold">Casa tradicional</span>
+              <h1 className="text-5xl md:text-7xl font-playfair leading-none">Su Bodega</h1>
+              <p className="text-xl md:text-2xl text-amber-100/90 font-serif">Los mejores Vinos del pais</p>
+              <p className="max-w-2xl text-amber-100/80 leading-7">
+                Estilo de vinoteca clasica con alma de bodegon antiguo. El comprador solo visualiza productos ya cargados.
+              </p>
+            </div>
 
-        {/* Filtros y Búsqueda */}
-        <div className="card-premium glass p-6 mb-8 border border-slate-700">
-          <div className="space-y-4">
-            {/* Búsqueda por nombre */}
-            <div>
-              <label className="block text-sm font-montserrat text-slate-300 mb-2">🔍 Buscar vino</label>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link
+                href="/cart"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-gold/60 bg-black/40 px-5 py-3 text-sm hover:border-gold"
+              >
+                Carrito
+                {itemCount > 0 && <span className="rounded-full bg-gold px-2 py-0.5 text-black font-semibold">{itemCount}</span>}
+              </Link>
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center rounded-full border border-amber-200/30 px-5 py-3 text-sm hover:border-gold"
+              >
+                Volver al inicio
+              </Link>
+            </div>
+          </div>
+
+          <nav className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <button
+              type="button"
+              onClick={() => setSection('vinos')}
+              className={`rounded-xl border px-4 py-3 text-left transition ${
+                section === 'vinos'
+                  ? 'border-gold bg-bordeaux/70 text-gold'
+                  : 'border-amber-100/20 bg-black/25 text-amber-100 hover:border-gold/70'
+              }`}
+            >
+              <p className="text-sm uppercase tracking-[0.2em]">Seccion</p>
+              <p className="text-lg font-semibold mt-1">Vinos</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSection('guardados')}
+              className={`rounded-xl border px-4 py-3 text-left transition ${
+                section === 'guardados'
+                  ? 'border-gold bg-bordeaux/70 text-gold'
+                  : 'border-amber-100/20 bg-black/25 text-amber-100 hover:border-gold/70'
+              }`}
+            >
+              <p className="text-sm uppercase tracking-[0.2em]">Seccion</p>
+              <p className="text-lg font-semibold mt-1">Vinos guardados</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSection('whiskey')}
+              className={`rounded-xl border px-4 py-3 text-left transition ${
+                section === 'whiskey'
+                  ? 'border-gold bg-bordeaux/70 text-gold'
+                  : 'border-amber-100/20 bg-black/25 text-amber-100 hover:border-gold/70'
+              }`}
+            >
+              <p className="text-sm uppercase tracking-[0.2em]">Seccion</p>
+              <p className="text-lg font-semibold mt-1">Whiskey</p>
+            </button>
+          </nav>
+        </header>
+
+        <section className="buyer-paper rounded-2xl p-5 md:p-7 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+            <div className="lg:col-span-2">
+              <label className="block text-xs uppercase tracking-[0.22em] text-amber-200/80 mb-2">Buscar</label>
               <input
                 type="text"
                 value={searchName}
                 onChange={(e) => setSearchName(e.target.value)}
-                placeholder="Ej: Malbec, Cabernet, Bodega..."
-                className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-gold focus:outline-none transition"
+                placeholder="Nombre, bodega o descripcion"
+                className="w-full rounded-lg border border-amber-100/20 bg-black/35 px-4 py-3 text-amber-50 placeholder:text-amber-100/45 focus:outline-none focus:border-gold"
               />
             </div>
 
-            {/* Filtros en grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Filtro por año */}
-              <div>
-                <label className="block text-sm font-montserrat text-slate-300 mb-2">Año</label>
-                <select
-                  value={filterYear}
-                  onChange={(e) => setFilterYear(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-3 text-white focus:border-gold focus:outline-none transition"
-                >
-                  <option value="">Todos</option>
-                  {years.map((year) => (
-                    <option key={year} value={year.toString()}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Filtro por región */}
-              <div>
-                <label className="block text-sm font-montserrat text-slate-300 mb-2">Región</label>
-                <select
-                  value={filterRegion}
-                  onChange={(e) => setFilterRegion(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-3 text-white focus:border-gold focus:outline-none transition"
-                >
-                  <option value="">Todas</option>
-                  {regions.map((region) => (
-                    <option key={region} value={region}>
-                      {region}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Filtro por tipo de uva */}
-              <div>
-                <label className="block text-sm font-montserrat text-slate-300 mb-2">Tipo de Uva</label>
-                <select
-                  value={filterGrape}
-                  onChange={(e) => setFilterGrape(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-3 text-white focus:border-gold focus:outline-none transition"
-                >
-                  <option value="">Todos</option>
-                  {grapes.map((grape) => (
-                    <option key={grape.id} value={grape.id}>
-                      {grape.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Ordenamiento */}
-              <div>
-                <label className="block text-sm font-montserrat text-slate-300 mb-2">Ordenar por</label>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                  className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-3 text-white focus:border-gold focus:outline-none transition"
-                >
-                  <option value="none">Relevancia</option>
-                  <option value="price-asc">Precio: Menor a Mayor</option>
-                  <option value="price-desc">Precio: Mayor a Menor</option>
-                  <option value="year-asc">Año: Más Antiguos</option>
-                  <option value="year-desc">Año: Más Recientes</option>
-                </select>
-              </div>
+            <div>
+              <label className="block text-xs uppercase tracking-[0.22em] text-amber-200/80 mb-2">Ano</label>
+              <select
+                value={filterYear}
+                onChange={(e) => setFilterYear(e.target.value)}
+                className="w-full rounded-lg border border-amber-100/20 bg-black/35 px-3 py-3 text-amber-50 focus:outline-none focus:border-gold"
+              >
+                <option value="">Todos</option>
+                {years.map((year) => (
+                  <option key={year} value={year.toString()}>
+                    {year}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* Botón limpiar filtros */}
-            {(searchName || filterYear || filterGrape || filterRegion || sortBy !== 'none') && (
-              <div className="pt-2">
-                <button
-                  onClick={() => {
-                    setSearchName('');
-                    setFilterYear('');
-                    setFilterGrape('');
-                    setFilterRegion('');
-                    setSortBy('none');
-                  }}
-                  className="text-sm text-gold hover:text-gold/80 underline"
-                >
-                  ✕ Limpiar filtros
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+            <div>
+              <label className="block text-xs uppercase tracking-[0.22em] text-amber-200/80 mb-2">Region</label>
+              <select
+                value={filterRegion}
+                onChange={(e) => setFilterRegion(e.target.value)}
+                className="w-full rounded-lg border border-amber-100/20 bg-black/35 px-3 py-3 text-amber-50 focus:outline-none focus:border-gold"
+              >
+                <option value="">Todas</option>
+                {regions.map((region) => (
+                  <option key={region} value={region}>
+                    {region}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        {/* Resultados */}
+            <div>
+              <label className="block text-xs uppercase tracking-[0.22em] text-amber-200/80 mb-2">Uva</label>
+              <select
+                value={filterGrape}
+                onChange={(e) => setFilterGrape(e.target.value)}
+                className="w-full rounded-lg border border-amber-100/20 bg-black/35 px-3 py-3 text-amber-50 focus:outline-none focus:border-gold"
+              >
+                <option value="">Todas</option>
+                {grapes.map((grape) => (
+                  <option key={grape.id} value={grape.id}>
+                    {grape.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div>
+              <label className="block text-xs uppercase tracking-[0.22em] text-amber-200/80 mb-2">Ordenar</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                className="w-full rounded-lg border border-amber-100/20 bg-black/35 px-3 py-3 text-amber-50 focus:outline-none focus:border-gold"
+              >
+                <option value="none">Relevancia</option>
+                <option value="price-asc">Precio: Menor a mayor</option>
+                <option value="price-desc">Precio: Mayor a menor</option>
+                <option value="year-asc">Ano: Antiguos primero</option>
+                <option value="year-desc">Ano: Recientes primero</option>
+              </select>
+            </div>
+
+            <div className="md:col-span-2 flex md:justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchName('');
+                  setFilterYear('');
+                  setFilterGrape('');
+                  setFilterRegion('');
+                  setSortBy('none');
+                }}
+                className="rounded-full border border-amber-100/20 px-4 py-2 text-sm text-amber-100 hover:border-gold"
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-5 flex flex-col md:flex-row md:items-end md:justify-between gap-2">
+          <div>
+            <h2 className="text-3xl font-playfair">{sectionCopy.title}</h2>
+            <p className="text-amber-100/70 mt-1">{sectionCopy.subtitle}</p>
+          </div>
+          <p className="text-sm text-amber-100/75">
+            Mostrando {filteredWines.length} de {sectionWines.length} etiquetas de la seccion
+          </p>
+        </section>
+
         {loading ? (
-          <div className="text-center py-12">
-            <p className="text-slate-400">Cargando vinos...</p>
-          </div>
+          <section className="buyer-paper rounded-2xl p-10 text-center">
+            <p className="text-amber-100/80">Cargando seleccion...</p>
+          </section>
         ) : filteredWines.length === 0 ? (
-          <div className="card-premium glass p-12 text-center border border-slate-700">
-            <p className="text-xl text-slate-300 mb-4">No se encontraron vinos con esos filtros</p>
-            <button
-              onClick={() => {
-                setSearchName('');
-                setFilterYear('');
-                setFilterGrape('');
-                setFilterRegion('');
-                setSortBy('none');
-              }}
-              className="text-gold hover:text-gold/80 underline"
-            >
-              Ver todos los vinos
-            </button>
-          </div>
+          <section className="buyer-paper rounded-2xl p-10 text-center">
+            <p className="text-xl">No hay productos en esta seccion con los filtros actuales.</p>
+            <p className="text-amber-100/70 mt-2">Esta vista solo muestra productos cargados previamente por administracion.</p>
+          </section>
         ) : (
-          <>
-            <div className="text-slate-300 mb-4">
-              Mostrando <span className="text-gold font-semibold">{filteredWines.length}</span> de{' '}
-              <span className="text-gold font-semibold">{wines.length}</span> vinos
-            </div>
+          <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+            {filteredWines.map((wine) => (
+              <Link
+                key={wine.id}
+                href={`/wines/${wine.id}`}
+                className="buyer-paper rounded-2xl overflow-hidden group hover:translate-y-[-2px] transition-transform"
+              >
+                <div className="relative h-64 bg-black/40 overflow-hidden">
+                  {wine.photos[0] ? (
+                    <Image
+                      src={wine.photos[0].url}
+                      alt={wine.name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center text-amber-100/50">Sin imagen</div>
+                  )}
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {filteredWines.map((wine) => (
-                <Link
-                  key={wine.id}
-                  href={`/wines/${wine.id}`}
-                  className="card-premium glass group cursor-pointer border border-slate-700 hover:border-gold transition-all duration-300 overflow-hidden flex flex-col h-full"
-                >
-                  {/* Imagen */}
-                  <div className="relative h-48 bg-slate-800 overflow-hidden">
-                    {wine.photos[0] ? (
-                      <Image
-                        src={wine.photos[0].url}
-                        alt={wine.name}
-                        fill
-                        className="object-cover group-hover:scale-110 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-600">Sin imagen</div>
-                    )}
-                    {/* Botón favorito */}
-                    <button
-                      onClick={(e) => toggleFavorite(e, wine.id)}
-                      className="absolute top-3 right-3 text-2xl hover:scale-125 transition-transform"
-                    >
-                      {favorites.has(wine.id) ? '❤️' : '🤍'}
-                    </button>
+                <div className="p-4 flex flex-col gap-3">
+                  <div>
+                    <h3 className="text-xl font-playfair leading-tight">{wine.name}</h3>
+                    <p className="text-sm text-amber-100/70 mt-1">
+                      {wine.year}
+                      {wine.region ? ` · ${wine.region}` : ''}
+                    </p>
+                    {wine.grapeType?.name && <p className="text-sm text-gold mt-1">Uva: {wine.grapeType.name}</p>}
+                    {wine.bodega && <p className="text-xs text-amber-100/65 mt-1">Bodega: {wine.bodega}</p>}
                   </div>
 
-                  {/* Contenido */}
-                  <div className="flex-grow p-4 flex flex-col justify-between">
-                    {/* Info */}
-                    <div className="mb-3">
-                      <h3 className="text-lg font-playfair font-semibold line-clamp-2">{wine.name}</h3>
-                      {wine.bodega && <p className="text-xs text-slate-400 mt-1">{wine.bodega}</p>}
-                      <div className="flex gap-2 mt-2 text-xs text-slate-400">
-                        <span>{wine.year}</span>
-                        {wine.region && <span>•</span>}
-                        {wine.region && <span>{wine.region}</span>}
-                      </div>
-                      {wine.grapeType && <p className="text-xs text-gold mt-1">{wine.grapeType.name}</p>}
-                      {wine.maridaje && <p className="text-xs text-slate-300 mt-2 italic">{wine.maridaje}</p>}
-                    </div>
-
-                    {/* Precio */}
-                    {wine.price && (
-                      <p className="text-lg font-semibold text-gold mb-3">${wine.price.toLocaleString('es-AR')}</p>
-                    )}
-
-                    {/* Botón agregar */}
+                  <div className="flex items-center justify-between mt-auto">
+                    <p className="text-lg font-semibold text-gold">${(wine.price || 0).toLocaleString('es-AR')}</p>
                     <button
                       onClick={(e) => handleAddToCart(e, wine)}
-                      className="btn-premium w-full py-2 text-sm"
+                      className="rounded-full border border-gold/60 px-4 py-2 text-sm hover:border-gold"
                     >
-                      Agregar al carrito
+                      Agregar
                     </button>
                   </div>
-                </Link>
-              ))}
-            </div>
-          </>
+                </div>
+              </Link>
+            ))}
+          </section>
         )}
 
-        {message && <p className="mt-8 text-center text-red-400">{message}</p>}
+        {message && <p className="mt-8 text-center text-red-300">{message}</p>}
       </div>
     </main>
   );

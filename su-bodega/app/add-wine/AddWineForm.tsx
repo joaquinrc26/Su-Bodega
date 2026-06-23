@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 type Grape = { id: string; name: string };
 type FilePreview = { file: File; preview: string };
@@ -203,6 +204,24 @@ export default function AddWineForm() {
             Completa todos los campos del vino que deseas agregar al catálogo. Las fotos y la descripción son opcionales pero
             recomendadas.
           </p>
+          <p className="text-sm text-slate-400 mt-3 max-w-2xl">
+            Todas las secciones visibles para comprador son manuales. Para categorizar, usa la palabra &quot;Guardado&quot; o
+            &quot;Whiskey/Whisky&quot; en el nombre, descripción o bodega al cargar el producto.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link
+              href="/admin/dashboard"
+              className="px-4 py-3 border rounded text-slate-100 border-slate-600 hover:border-gold"
+            >
+              Volver al panel admin
+            </Link>
+            <Link
+              href="/wines"
+              className="px-4 py-3 border rounded text-slate-100 border-slate-600 hover:border-gold"
+            >
+              Ir a vista comprador
+            </Link>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">

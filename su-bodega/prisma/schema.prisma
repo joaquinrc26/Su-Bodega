@@ -43,6 +43,18 @@ model AdminUser {
   createdAt DateTime @default(now())
 }
 
+model BuyerUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // Almacenado en plaintext por simplicidad (en producción usar bcrypt)
+  name      String
+  phone     String?
+  address   String?
+  city      String?
+  zipCode   String?
+  createdAt DateTime @default(now())
+}
+
 model Order {
   id              String      @id @default(cuid())
   customerEmail   String

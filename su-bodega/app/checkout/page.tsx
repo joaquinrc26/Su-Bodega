@@ -2,24 +2,70 @@
 
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/lib/cart-context';
-import { useState } from 'react';
-import Image from 'next/image';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+
+type Buyer = {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  zipCode?: string;
+};
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cart, total } = useCart();
+  const { cart, total, clearCart } = useCart();
+  const [buyer, setBuyer] = useState<Buyer | null>(null);
+  const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Redirigir si no hay items en el carrito
+  // Cargar datos del buyer
+  useEffect(() => {
+    async function loadBuyer() {
+      try {
+        const res = await fetch('/api/buyer/profile');
+        if (!res.ok) {
+          router.push('/buyer-auth');
+          return;
+        }
+        const data = await res.json();
+        setBuyer(data);
+      } catch {
+        router.push('/buyer-auth');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadBuyer();
+  }, [router]);
+
+  if (loading) {
+    return (
+      <main className="min-h-screen buyer-bodegon-bg flex items-center justify-center">
+        <div className="card-premium p-8 rounded-2xl text-center">
+          <p className="text-amber-100">Cargando...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!buyer) {
+    return null;
+  }
+
   if (cart.length === 0 && !orderComplete) {
     return (
-      <main className="container-premium py-12 min-h-screen flex items-center justify-center">
-        <div className="text-center">
+      <main className="min-h-screen buyer-bodegon-bg flex items-center justify-center">
+        <div className="card-premium p-12 rounded-2xl text-center">
           <h2 className="text-3xl font-playfair text-gold mb-4">Carrito Vacío</h2>
-          <p className="text-slate-400 mb-8">No tienes artículos en tu carrito</p>
-          <Link href="/wines" className="btn-premium">
+          <p className="text-amber-100/70 mb-8">No tienes artículos en tu carrito</p>
+          <Link href="/wines" className="btn-premium inline-block">
             Volver al Catálogo
           </Link>
         </div>
@@ -27,20 +73,14 @@ export default function CheckoutPage() {
     );
   }
 
-  // Pantalla de orden completada
   if (orderComplete) {
     return (
-      <main className="container-premium py-12 min-h-screen flex items-center justify-center">
-        <div className="text-center max-w-2xl">
+      <main className="min-h-screen buyer-bodegon-bg flex items-center justify-center">
+        <div className="card-premium p-12 rounded-2xl text-center max-w-2xl">
           <div className="mb-8 text-6xl">✅</div>
-          <h2 className="text-4xl font-playfair text-gold mb-4">¡Compra Completada!</h2>
-          <p className="text-slate-300 mb-4">
-            Gracias por tu compra. Tu orden ha sido registrada exitosamente.
-          </p>
-          <p className="text-slate-400 mb-8">
-            Recibirás un email de confirmación con los detalles de envío y la información de pago.
-          </p>
-          <Link href="/wines" className="btn-premium">
+          <h2 className="text-4xl font-playfair text-gold mb-4">¡Orden Confirmada!</h2>
+          <p className="text-amber-100/80 mb-6">Gracias por tu compra. Te enviaremos un email con los detalles.</p>
+          <Link href="/wines" className="btn-premium inline-block">
             Volver al Catálogo
           </Link>
         </div>
@@ -48,37 +88,40 @@ export default function CheckoutPage() {
     );
   }
 
-  const SHIPPING_FREE_THRESHOLD = 200000;
-  const SHIPPING_COST = total >= SHIPPING_FREE_THRESHOLD ? 0 : 5000;
+  const SHIPPING_THRESHOLD = 200000;
+  const SHIPPING_COST = total >= SHIPPING_THRESHOLD ? 0 : 5000;
   const FINAL_TOTAL = total + SHIPPING_COST;
 
   const handleSubmitOrder = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setMessage(null);
 
     try {
       const formData = new FormData(e.currentTarget);
-      const customerName = formData.get('name') as string;
-      const customerEmail = formData.get('email') as string;
-      const customerPhone = formData.get('phone') as string;
-      const shippingAddress = `${formData.get('street')} ${formData.get('number')}${
-        formData.get('apartment') ? `, Apto ${formData.get('apartment')}` : ''
-      }`;
-      const shippingCity = formData.get('city') as string;
-      const shippingZip = formData.get('postal') as string;
-      const paymentMethod = (formData.get('payment') as string) || 'transferencia';
+      const address = formData.get('address') as string;
+      const city = formData.get('city') as string;
+      const zipCode = formData.get('zipCode') as string;
+      const paymentMethod = (formData.get('payment') as string) || 'bank';
+
+      // Actualizar perfil del buyer con dirección
+      await fetch('/api/buyer/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address, city, zipCode }),
+      });
 
       const orderData = {
-        customerEmail,
-        customerName,
-        customerPhone,
-        shippingAddress,
-        shippingCity,
-        shippingZip,
+        customerEmail: buyer.email,
+        customerName: buyer.name,
+        customerPhone: buyer.phone || '',
+        shippingAddress: address,
+        shippingCity: city,
+        shippingZip: zipCode,
         shippingCost: SHIPPING_COST,
         total: FINAL_TOTAL,
         items: cart,
-        paymentMethod: paymentMethod === 'bank' ? 'transferencia' : paymentMethod === 'cash' ? 'efectivo' : 'mercadopago',
+        paymentMethod: paymentMethod === 'bank' ? 'transferencia' : 'efectivo',
       };
 
       const response = await fetch('/api/orders/create', {
@@ -93,173 +136,107 @@ export default function CheckoutPage() {
         throw new Error(data.error || 'Error al crear la orden');
       }
 
-      // Si es MercadoPago, redirigir a checkout
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      } else {
-        // Si es transferencia o efectivo, mostrar confirmación
-        setOrderComplete(true);
-      }
-    } catch (error) {
-      console.error('Error al procesar orden:', error);
-      alert('Hubo un error al procesar tu orden. Intenta nuevamente.');
+      clearCart();
+      setOrderComplete(true);
+    } catch {
+      setMessage({ type: 'error', text: 'Error al procesar la orden. Intenta nuevamente.' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <main className="container-premium py-12 min-h-screen">
-      <div className="mb-8">
-        <Link href="/wines" className="text-gold hover:text-yellow-300 transition">
-          ← Volver al Catálogo
-        </Link>
-      </div>
+    <main className="min-h-screen buyer-bodegon-bg">
+      <div className="container-premium py-10 md:py-14">
+        {/* Header */}
+        <div className="mb-12">
+          <Link href="/cart" className="text-gold hover:text-gold/80 text-sm">
+            ← Volver al carrito
+          </Link>
+          <h1 className="text-5xl md:text-6xl font-playfair mt-4 text-amber-50">Finalizar Compra</h1>
+        </div>
 
-      <h1 className="text-4xl font-playfair text-gold mb-12">Finalizar Compra</h1>
+        {message && (
+          <div className={`card-premium p-4 rounded-2xl mb-8 ${message.type === 'error' ? 'border-red-500/30 bg-red-500/10' : 'border-green-500/30 bg-green-500/10'}`}>
+            <p className={message.type === 'error' ? 'text-red-200' : 'text-green-200'}>{message.text}</p>
+          </div>
+        )}
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* Formulario */}
-        <div className="lg:col-span-2">
+        <div className="grid gap-8 lg:grid-cols-[2fr_1fr]">
+          {/* Formulario */}
           <form onSubmit={handleSubmitOrder} className="space-y-8">
-            {/* Información Personal */}
-            <section className="card-premium p-6 border border-slate-700">
-              <h2 className="text-2xl font-playfair text-gold mb-6">Información Personal</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Datos del Comprador */}
+            <section className="card-premium p-8 md:p-10 rounded-2xl">
+              <h2 className="text-2xl font-playfair text-gold mb-6">Tus Datos</h2>
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-montserrat text-slate-300 mb-2">
-                    Nombre Completo *
-                  </label>
+                  <label className="block text-sm font-medium text-amber-100 mb-2">Nombre</label>
                   <input
                     type="text"
-                    name="name"
-                    required
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-gold focus:outline-none transition"
-                    placeholder="Juan Pérez"
+                    value={buyer.name}
+                    disabled
+                    className="w-full bg-black/20 border border-gold/20 rounded-lg p-3 text-amber-50 cursor-not-allowed opacity-70"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-montserrat text-slate-300 mb-2">
-                    Email *
-                  </label>
+                  <label className="block text-sm font-medium text-amber-100 mb-2">Email</label>
                   <input
                     type="email"
-                    name="email"
-                    required
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-gold focus:outline-none transition"
-                    placeholder="juan@example.com"
+                    value={buyer.email}
+                    disabled
+                    className="w-full bg-black/20 border border-gold/20 rounded-lg p-3 text-amber-50 cursor-not-allowed opacity-70"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-montserrat text-slate-300 mb-2">
-                    Teléfono *
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    required
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-gold focus:outline-none transition"
-                    placeholder="+54 11 1234-5678"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-montserrat text-slate-300 mb-2">
-                    País *
-                  </label>
-                  <select
-                    name="country"
-                    required
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-gold focus:outline-none transition"
-                  >
-                    <option value="AR">Argentina</option>
-                    <option value="CL">Chile</option>
-                    <option value="BR">Brasil</option>
-                    <option value="UY">Uruguay</option>
-                  </select>
-                </div>
+                {buyer.phone && (
+                  <div>
+                    <label className="block text-sm font-medium text-amber-100 mb-2">Teléfono</label>
+                    <input
+                      type="tel"
+                      value={buyer.phone}
+                      disabled
+                      className="w-full bg-black/20 border border-gold/20 rounded-lg p-3 text-amber-50 cursor-not-allowed opacity-70"
+                    />
+                  </div>
+                )}
               </div>
             </section>
 
-            {/* Dirección */}
-            <section className="card-premium p-6 border border-slate-700">
+            {/* Dirección de Envío */}
+            <section className="card-premium p-8 md:p-10 rounded-2xl">
               <h2 className="text-2xl font-playfair text-gold mb-6">Dirección de Envío</h2>
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-montserrat text-slate-300 mb-2">
-                      Calle *
-                    </label>
-                    <input
-                      type="text"
-                      name="street"
-                      required
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-gold focus:outline-none transition"
-                      placeholder="Av. Santa Fe"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-montserrat text-slate-300 mb-2">
-                      Número *
-                    </label>
-                    <input
-                      type="text"
-                      name="number"
-                      required
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-gold focus:outline-none transition"
-                      placeholder="1234"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-amber-100 mb-2">Calle y Número *</label>
+                  <input
+                    type="text"
+                    name="address"
+                    defaultValue={buyer.address || ''}
+                    required
+                    placeholder="Av. Santa Fe 1500"
+                    className="w-full bg-black/20 border border-gold/20 rounded-lg p-3 text-amber-50 placeholder-amber-100/30 focus:border-gold focus:outline-none"
+                  />
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-montserrat text-slate-300 mb-2">
-                      Departamento/Apto. (Opcional)
-                    </label>
-                    <input
-                      type="text"
-                      name="apartment"
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-gold focus:outline-none transition"
-                      placeholder="5B"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-montserrat text-slate-300 mb-2">
-                      Código Postal *
-                    </label>
-                    <input
-                      type="text"
-                      name="postal"
-                      required
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-gold focus:outline-none transition"
-                      placeholder="C1425"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-montserrat text-slate-300 mb-2">
-                      Ciudad *
-                    </label>
+                    <label className="block text-sm font-medium text-amber-100 mb-2">Ciudad *</label>
                     <input
                       type="text"
                       name="city"
+                      defaultValue={buyer.city || ''}
                       required
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-gold focus:outline-none transition"
                       placeholder="Buenos Aires"
+                      className="w-full bg-black/20 border border-gold/20 rounded-lg p-3 text-amber-50 placeholder-amber-100/30 focus:border-gold focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-montserrat text-slate-300 mb-2">
-                      Provincia/Estado *
-                    </label>
+                    <label className="block text-sm font-medium text-amber-100 mb-2">Código Postal *</label>
                     <input
                       type="text"
-                      name="province"
+                      name="zipCode"
+                      defaultValue={buyer.zipCode || ''}
                       required
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-gold focus:outline-none transition"
-                      placeholder="Buenos Aires"
+                      placeholder="C1425"
+                      className="w-full bg-black/20 border border-gold/20 rounded-lg p-3 text-amber-50 placeholder-amber-100/30 focus:border-gold focus:outline-none"
                     />
                   </div>
                 </div>
@@ -267,115 +244,91 @@ export default function CheckoutPage() {
             </section>
 
             {/* Método de Pago */}
-            <section className="card-premium p-6 border border-slate-700">
+            <section className="card-premium p-8 md:p-10 rounded-2xl">
               <h2 className="text-2xl font-playfair text-gold mb-6">Método de Pago</h2>
-              <div className="space-y-4">
-                <label className="flex items-center p-4 border border-slate-700 rounded-lg cursor-pointer hover:border-gold hover:bg-slate-900/50 transition">
-                  <input type="radio" name="payment" value="bank" defaultChecked className="w-4 h-4" />
+              <div className="space-y-3">
+                <label className="flex items-center p-4 border border-gold/20 rounded-lg cursor-pointer hover:border-gold hover:bg-gold/5 transition">
+                  <input type="radio" name="payment" value="bank" defaultChecked className="w-4 h-4 accent-gold" />
                   <div className="ml-4">
-                    <p className="font-montserrat text-white">Transferencia Bancaria</p>
-                    <p className="text-sm text-slate-400">Recibe los datos después de confirmar</p>
+                    <p className="font-medium text-amber-50">Transferencia Bancaria</p>
+                    <p className="text-sm text-amber-100/60">Envío gratis a CABA y AMBA</p>
                   </div>
                 </label>
 
-                <label className="flex items-center p-4 border border-slate-700 rounded-lg cursor-pointer hover:border-gold hover:bg-slate-900/50 transition">
-                  <input type="radio" name="payment" value="cash" className="w-4 h-4" />
+                <label className="flex items-center p-4 border border-gold/20 rounded-lg cursor-pointer hover:border-gold hover:bg-gold/5 transition">
+                  <input type="radio" name="payment" value="cash" className="w-4 h-4 accent-gold" />
                   <div className="ml-4">
-                    <p className="font-montserrat text-white">Efectivo contra Entrega</p>
-                    <p className="text-sm text-slate-400">Paga cuando recibas tu orden</p>
+                    <p className="font-medium text-amber-50">Efectivo en Entrega</p>
+                    <p className="text-sm text-amber-100/60">Paga cuando recibas tu orden</p>
                   </div>
                 </label>
 
-                <label className="flex items-center p-4 border border-slate-700 rounded-lg cursor-pointer opacity-50 disabled:cursor-not-allowed">
-                  <input type="radio" name="payment" value="card" disabled className="w-4 h-4" />
+                <label className="flex items-center p-4 border border-gold/10 rounded-lg opacity-50 cursor-not-allowed">
+                  <input type="radio" name="payment" value="card" disabled className="w-4 h-4 accent-gold" />
                   <div className="ml-4">
-                    <p className="font-montserrat text-white">Tarjeta de Crédito/Débito</p>
-                    <p className="text-sm text-slate-400">Próximamente</p>
+                    <p className="font-medium text-amber-50">Tarjeta de Crédito/Débito</p>
+                    <p className="text-sm text-amber-100/60">Próximamente</p>
                   </div>
                 </label>
               </div>
             </section>
 
-            {/* Notas */}
-            <section className="card-premium p-6 border border-slate-700">
-              <h2 className="text-2xl font-playfair text-gold mb-6">Notas Adicionales (Opcional)</h2>
-              <textarea
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-gold focus:outline-none transition h-32 resize-none"
-                placeholder="Agregá instrucciones especiales para la entrega..."
-              />
-            </section>
-
-            {/* Botón Enviar */}
+            {/* Botón Confirmar */}
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full btn-premium py-4 text-lg font-montserrat disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-premium w-full py-4 text-lg font-semibold"
             >
-              {isSubmitting ? 'Procesando...' : 'Finalizar Compra'}
+              {isSubmitting ? 'Procesando...' : 'Confirmar Orden'}
             </button>
           </form>
-        </div>
 
-        {/* Resumen Lateral */}
-        <div className="lg:col-span-1">
-          <div className="card-premium border border-slate-700 p-6 sticky top-8">
-            <h3 className="text-2xl font-playfair text-gold mb-6">Resumen del Pedido</h3>
+          {/* Resumen */}
+          <div className="card-premium p-8 md:p-10 rounded-2xl h-fit sticky top-20">
+            <h3 className="text-xl font-playfair text-gold mb-6">Resumen de Compra</h3>
 
             {/* Items */}
-            <div className="space-y-4 mb-6 max-h-72 overflow-y-auto">
+            <div className="space-y-3 mb-6 pb-6 border-b border-gold/10">
               {cart.map((item) => (
-                <div key={item.id} className="flex gap-4 pb-4 border-b border-slate-700">
-                  {item.image && (
-                    <div className="relative w-16 h-16 flex-shrink-0">
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        className="object-cover rounded"
-                      />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white font-montserrat truncate">{item.name}</p>
-                    <p className="text-slate-400 text-sm">{item.year}</p>
-                    <p className="text-gold text-sm">
-                      {item.quantity} x ${item.price.toLocaleString()}
-                    </p>
-                  </div>
+                <div key={item.id} className="flex justify-between text-sm">
+                  <span className="text-amber-100/80">{item.name} x {item.quantity}</span>
+                  <span className="text-gold font-semibold">
+                    ${(item.price * item.quantity).toLocaleString('es-AR')}
+                  </span>
                 </div>
               ))}
             </div>
 
             {/* Totales */}
-            <div className="space-y-3 border-t border-slate-700 pt-6">
-              <div className="flex justify-between text-slate-300">
-                <span>Subtotal:</span>
-                <span>${total.toLocaleString()}</span>
+            <div className="space-y-3 mb-6">
+              <div className="flex justify-between text-sm">
+                <span className="text-amber-100/70">Subtotal</span>
+                <span className="text-amber-50">${total.toLocaleString('es-AR')}</span>
               </div>
-              <div className="flex justify-between text-slate-300">
-                <span>Envío:</span>
-                <span className={SHIPPING_COST === 0 ? 'text-green-400 font-semibold' : ''}>
-                  {SHIPPING_COST === 0 ? '¡GRATIS!' : `$${SHIPPING_COST.toLocaleString()}`}
+              <div className="flex justify-between text-sm">
+                <span className="text-amber-100/70">Envío a CABA/AMBA</span>
+                <span className={SHIPPING_COST === 0 ? 'text-green-300 font-semibold' : 'text-amber-50'}>
+                  {SHIPPING_COST === 0 ? 'GRATIS' : `$${SHIPPING_COST.toLocaleString('es-AR')}`}
                 </span>
               </div>
 
-              {total < SHIPPING_FREE_THRESHOLD && (
-                <p className="text-xs text-slate-400 bg-slate-900/50 p-2 rounded">
-                  Envío gratis desde ${SHIPPING_FREE_THRESHOLD.toLocaleString()}
+              {total < 200000 && SHIPPING_COST > 0 && (
+                <p className="text-xs text-gold/70 italic">
+                  Falta ${(200000 - total).toLocaleString('es-AR')} para envío gratis
                 </p>
               )}
 
-              <div className="flex justify-between text-xl font-playfair text-gold pt-3 border-t border-slate-700">
-                <span>Total:</span>
-                <span>${FINAL_TOTAL.toLocaleString()}</span>
+              <div className="flex justify-between text-lg font-semibold pt-3 border-t border-gold/10">
+                <span>Total</span>
+                <span className="text-gold">${FINAL_TOTAL.toLocaleString('es-AR')}</span>
               </div>
             </div>
 
             {/* Info */}
-            <div className="mt-6 pt-6 border-t border-slate-700 text-xs text-slate-400 space-y-2">
-              <p>✓ Envío seguro</p>
-              <p>✓ Datos encriptados</p>
-              <p>✓ Política de devolución</p>
+            <div className="text-xs text-amber-100/60 space-y-2 pt-6 border-t border-gold/10">
+              <div>✓ Envío gratis desde $200.000</div>
+              <div>✓ Compra segura</div>
+              <div>✓ Confirmación inmediata de la orden</div>
             </div>
           </div>
         </div>

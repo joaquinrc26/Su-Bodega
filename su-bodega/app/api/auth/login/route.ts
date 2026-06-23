@@ -14,11 +14,7 @@ export async function POST(request: Request) {
     // Opción 1: Validar contra contraseña env (fallback para compatibilidad)
     if (!email && password === ADMIN_PASSWORD) {
       const response = NextResponse.json({ ok: true, message: 'Ingreso exitoso' });
-      response.cookies.set('su-bodega-admin', 'admin', {
-        httpOnly: true,
-        maxAge: 60 * 60 * 24 * 7,
-        sameSite: 'strict',
-      });
+      response.headers.set('Set-Cookie', createAdminCookie());
       return response;
     }
 
@@ -41,11 +37,7 @@ export async function POST(request: Request) {
       admin: { id: admin.id, email: admin.email, name: admin.name }
     });
 
-    response.cookies.set('su-bodega-admin', email, {
-      httpOnly: true,
-      maxAge: 60 * 60 * 24 * 7,
-      sameSite: 'strict',
-    });
+    response.headers.set('Set-Cookie', createAdminCookie());
 
     return response;
   } catch (error) {

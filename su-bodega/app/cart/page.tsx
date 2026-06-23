@@ -166,7 +166,7 @@ export default function CartPage() {
               </div>
 
               <button 
-                onClick={() => router.push('/checkout')}
+                onClick={() => router.push('/buyer-auth')}
                 className="btn-premium w-full mb-3"
               >
                 Proceder al pago

@@ -26,7 +26,7 @@ export default function AdminPage() {
 
       if (response.ok) {
         setMessage({ type: 'success', text: '¡Ingreso exitoso! Redirigiendo...' });
-        setTimeout(() => router.push('/add-wine'), 1500);
+        setTimeout(() => router.push('/admin/dashboard'), 1200);
       } else if (response.status === 401) {
         setMessage({ type: 'error', text: 'Credenciales inválidas' });
       } else {
@@ -53,7 +53,7 @@ export default function AdminPage() {
 
       if (response.ok) {
         setMessage({ type: 'success', text: '¡Cuenta creada! Redirigiendo...' });
-        setTimeout(() => router.push('/add-wine'), 1500);
+        setTimeout(() => router.push('/admin/dashboard'), 1200);
       } else if (response.status === 409) {
         setMessage({ type: 'error', text: 'Este email ya está registrado' });
       } else {
@@ -145,12 +145,6 @@ export default function AdminPage() {
               ? '¿No tienes cuenta? Crear una nueva'
               : '¿Ya tienes cuenta? Ingresar'}
           </button>
-        </div>
-
-        <div className="mt-4 p-4 bg-slate-800 rounded text-xs text-slate-400">
-          <p className="font-semibold mb-2">Para pruebas rápidas:</p>
-          <p>Email: <code className="text-gold">admin@bodega.com</code></p>
-          <p>Contraseña: <code className="text-gold">admin123</code></p>
         </div>
       </div>
     </main>
