@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Decimal } from '@prisma/client/runtime/library';
+import { getBuyerIdFromCookie } from '@/lib/auth';
 
 interface CartItem {
   id: string;
@@ -12,6 +13,15 @@ interface CartItem {
 
 export async function POST(request: NextRequest) {
   try {
+    const buyerId = getBuyerIdFromCookie(request);
+
+    if (!buyerId) {
+      return NextResponse.json(
+        { error: 'Debes iniciar sesión para finalizar la compra' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const {
       customerEmail,
@@ -26,6 +36,23 @@ export async function POST(request: NextRequest) {
       paymentMethod,
     } = body;
 
+    const buyer = await prisma.buyerUser.findUnique({
+      where: { id: buyerId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phone: true,
+      },
+    });
+
+    if (!buyer) {
+      return NextResponse.json(
+        { error: 'Comprador no encontrado' },
+        { status: 401 }
+      );
+    }
+
     // Validaciones
     if (!customerEmail || !customerName || !items || items.length === 0) {
       return NextResponse.json(
@@ -34,13 +61,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (customerEmail !== buyer.email || customerName !== buyer.name) {
+      return NextResponse.json(
+        { error: 'Los datos del comprador no coinciden con la sesión activa' },
+        { status: 403 }
+      );
+    }
+
     // Si es transferencia o efectivo, crear orden sin MercadoPago
     if (paymentMethod !== 'mercadopago') {
       const order = await prisma.order.create({
         data: {
+          buyerId: buyer.id,
           customerEmail,
           customerName,
-          customerPhone,
+          customerPhone: customerPhone || buyer.phone || '',
           shippingAddress,
           shippingCity,
           shippingZip,
@@ -128,9 +163,10 @@ export async function POST(request: NextRequest) {
     // Crear orden en BD
     const order = await prisma.order.create({
       data: {
+        buyerId: buyer.id,
         customerEmail,
         customerName,
-        customerPhone,
+        customerPhone: customerPhone || buyer.phone || '',
         shippingAddress,
         shippingCity,
         shippingZip,

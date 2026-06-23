@@ -52,6 +52,8 @@ lerna-debug.log*
 # Prisma
 prisma/dev.db
 prisma/dev.db-journal
+su-bodega/prisma/dev.db
+su-bodega/prisma/dev.db-journal
 
 # Build output
 .turbo

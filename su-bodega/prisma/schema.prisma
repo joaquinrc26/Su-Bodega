@@ -52,11 +52,14 @@ model BuyerUser {
   address   String?
   city      String?
   zipCode   String?
+  orders     Order[]
   createdAt DateTime @default(now())
 }
 
 model Order {
   id              String      @id @default(cuid())
+  buyerId         String?
+  buyer           BuyerUser?  @relation(fields: [buyerId], references: [id])
   customerEmail   String
   customerName    String
   customerPhone   String
