@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Decimal } from '@prisma/client/runtime/library';
 import { getBuyerIdFromCookie } from '@/lib/auth';
+import { validateCartItems } from '@/lib/stock';
 
 interface CartItem {
   id: string;
@@ -67,6 +68,45 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       );
     }
+
+    const wineIds = (items as CartItem[]).map((item) => item.id);
+    const wines = await prisma.wine.findMany({
+      where: { id: { in: wineIds } },
+      select: { id: true, stock: true, isActive: true },
+    });
+
+    const stockLookup = new Map(wines.map((wine) => [wine.id, wine]));
+    const stockValidation = validateCartItems((items as CartItem[]).map((item) => ({
+      id: item.id,
+      quantity: item.quantity,
+      stock: stockLookup.get(item.id)?.stock ?? 0,
+    })));
+
+    if (!stockValidation.ok || wines.some((wine) => !wine.isActive)) {
+      return NextResponse.json(
+        { error: 'No hay stock suficiente o alguno de los productos ya no está disponible.' },
+        { status: 409 }
+      );
+    }
+
+    const stockUpdates = (items as CartItem[]).map((item) => ({
+      id: item.id,
+      quantity: item.quantity,
+    }));
+
+    await prisma.$transaction(async (tx) => {
+      for (const item of stockUpdates) {
+        const currentWine = await tx.wine.findUnique({ where: { id: item.id }, select: { id: true, stock: true } });
+        if (!currentWine || currentWine.stock < item.quantity) {
+          throw new Error('Stock no disponible');
+        }
+
+        await tx.wine.update({
+          where: { id: item.id },
+          data: { stock: { decrement: item.quantity } },
+        });
+      }
+    });
 
     // Si es transferencia o efectivo, crear orden sin MercadoPago
     if (paymentMethod !== 'mercadopago') {

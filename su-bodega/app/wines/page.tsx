@@ -172,6 +172,7 @@ export default function WinesPage() {
       quantity: 1,
       image: wine.photos[0]?.url,
       year: wine.year,
+      stock: wine.stock ?? 0,
     });
   };
 

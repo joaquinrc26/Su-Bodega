@@ -59,7 +59,6 @@ export function parseCookies(cookieHeader: string | null | undefined) {
 
 export function isAdminToken(token: string | null | undefined): boolean {
   if (!token) return false;
-  if (token === ADMIN_PASSWORD) return true;
   return verifyCookieValue(token);
 }
 

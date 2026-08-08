@@ -91,11 +91,18 @@ export default function CheckoutPage() {
   const SHIPPING_THRESHOLD = 200000;
   const SHIPPING_COST = total >= SHIPPING_THRESHOLD ? 0 : 5000;
   const FINAL_TOTAL = total + SHIPPING_COST;
+  const stockValidation = cart.every((item) => item.quantity > 0 && (item.stock ?? 0) >= item.quantity);
 
   const handleSubmitOrder = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setMessage(null);
+
+    if (!stockValidation) {
+      setMessage({ type: 'error', text: 'No podemos procesar la compra porque hay productos sin stock suficiente.' });
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       const formData = new FormData(e.currentTarget);

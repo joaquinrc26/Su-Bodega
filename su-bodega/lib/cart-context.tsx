@@ -9,6 +9,7 @@ export type CartItem = {
   quantity: number;
   image?: string;
   year: number;
+  stock?: number;
 };
 
 type CartContextType = {
@@ -53,14 +54,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const addToCart = (newItem: CartItem) => {
     setCart((prevCart) => {
       const existing = prevCart.find((item) => item.id === newItem.id);
+      const stock = Number(newItem.stock ?? 0);
+      const requestedQuantity = Number(newItem.quantity || 1);
+
       if (existing) {
+        const nextQuantity = existing.quantity + requestedQuantity;
+        const safeQuantity = stock > 0 ? Math.min(nextQuantity, stock) : 0;
         return prevCart.map((item) =>
-          item.id === newItem.id
-            ? { ...item, quantity: item.quantity + (newItem.quantity || 1) }
-            : item
+          item.id === newItem.id ? { ...item, quantity: safeQuantity } : item
         );
       }
-      return [...prevCart, { ...newItem, quantity: newItem.quantity || 1 }];
+
+      const safeQuantity = stock > 0 ? Math.min(requestedQuantity, stock) : 0;
+      return safeQuantity > 0 ? [...prevCart, { ...newItem, quantity: safeQuantity }] : prevCart;
     });
   };
 
@@ -74,9 +80,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.id === id ? { ...item, quantity } : item
-      )
+      prevCart.map((item) => {
+        if (item.id !== id) return item;
+        const maxQuantity = Number(item.stock ?? 0);
+        return { ...item, quantity: maxQuantity > 0 ? Math.min(quantity, maxQuantity) : 0 };
+      })
     );
   };
 

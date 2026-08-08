@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useCart } from '@/lib/cart-context';
 import { useState } from 'react';
+import { validateCartItems } from '@/lib/stock';
 
 export default function CartPage() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function CartPage() {
   const shippingCost = total > 200000 ? 0 : 5000; // Envío gratis desde 200.000
   const subtotal = total;
   const finalTotal = subtotal + shippingCost;
+  const stockValidation = validateCartItems(cart.map((item) => ({ id: item.id, quantity: item.quantity, stock: item.stock })));
 
   return (
     <main className="min-h-screen buyer-bodegon-bg text-amber-50">
@@ -172,8 +174,9 @@ export default function CartPage() {
               <button 
                 onClick={() => router.push('/buyer-auth')}
                 className="btn-premium w-full mb-3"
+                disabled={!stockValidation.ok}
               >
-                Proceder al pago
+                {stockValidation.ok ? 'Proceder al pago' : 'Revisar stock'}
               </button>
 
               <Link href="/wines" className="block w-full text-center px-4 py-3 border border-amber-100/20 rounded hover:border-gold text-amber-50">
@@ -181,6 +184,12 @@ export default function CartPage() {
               </Link>
 
               {/* Info promo */}
+              {!stockValidation.ok && (
+                <div className="mb-4 rounded-2xl border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-200">
+                  Algunos productos ya no tienen stock suficiente para tu pedido.
+                </div>
+              )}
+
               <div className="mt-6 pt-6 border-t border-gold/10 text-xs text-amber-100/60 space-y-2">
                 <div className="flex gap-2">
                   <span className="text-gold">✓</span>
