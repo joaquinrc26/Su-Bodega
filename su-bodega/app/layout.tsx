@@ -1,21 +1,16 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Montserrat } from "next/font/google";
+import { Bodoni_Moda } from "next/font/google";
 import { cookies } from "next/headers";
 import { CartProvider } from "@/lib/cart-context";
 import { ADMIN_COOKIE_NAME, isAdminToken } from "@/lib/auth";
 import AdminTopBar from "@/components/AdminTopBar";
+import PublicHeader from "@/components/PublicHeader";
 import SocialFloatingButtons from "@/components/SocialFloatingButtons";
 import "./globals.css";
 
-const playfair = Playfair_Display({
+const bodoniModa = Bodoni_Moda({
   subsets: ["latin"],
-  variable: "--font-playfair",
-  display: "swap",
-});
-
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  variable: "--font-montserrat",
+  variable: "--font-bodoni-moda",
   display: "swap",
 });
 
@@ -46,10 +41,11 @@ export default async function RootLayout({
   return (
     <html lang="es" className="scroll-smooth">
       <body
-        className={`${playfair.variable} ${montserrat.variable} antialiased bg-background text-foreground`}
+        className={`${bodoniModa.variable} antialiased bg-background text-foreground`}
       >
         <CartProvider>
           <AdminTopBar isAdmin={isAdmin} />
+          {!isAdmin && <PublicHeader />}
           {children}
           <SocialFloatingButtons />
         </CartProvider>

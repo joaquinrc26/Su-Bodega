@@ -1,14 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useCart } from '@/lib/cart-context';
 import { useState } from 'react';
 import { validateCartItems } from '@/lib/stock';
 
 export default function CartPage() {
-  const router = useRouter();
   const { cart, removeFromCart, updateQuantity, clearCart, total } = useCart();
   const [coupon, setCoupon] = useState('');
 
@@ -16,6 +14,18 @@ export default function CartPage() {
   const subtotal = total;
   const finalTotal = subtotal + shippingCost;
   const stockValidation = validateCartItems(cart.map((item) => ({ id: item.id, quantity: item.quantity, stock: item.stock })));
+  const whatsappMessage = [
+    'Hola Su Bodega, quiero coordinar este pedido:',
+    '',
+    ...cart.map((item) => `- ${item.name} ${item.year} × ${item.quantity}: $${(item.price * item.quantity).toLocaleString('es-AR')}`),
+    '',
+    `Subtotal: $${subtotal.toLocaleString('es-AR')}`,
+    `Envío: ${shippingCost === 0 ? 'Gratis' : `$${shippingCost.toLocaleString('es-AR')}`}`,
+    `Total: $${finalTotal.toLocaleString('es-AR')}`,
+    '',
+    'Quedo atento/a para coordinar el pedido por WhatsApp.',
+  ].join('\n');
+  const whatsappHref = `https://wa.me/5492214366342?text=${encodeURIComponent(whatsappMessage)}`;
 
   return (
     <main className="min-h-screen buyer-bodegon-bg text-amber-50">
@@ -26,7 +36,7 @@ export default function CartPage() {
             <div>
               <span className="wine-section-label">Tu carrito</span>
               <h1 className="text-4xl md:text-5xl font-playfair font-semibold mt-2">Revisar compra</h1>
-              <p className="mt-3 max-w-2xl text-amber-100/72">Un resumen claro antes de pasar al checkout con cuenta buyer. Ajusta cantidades, revisa el envío y continúa con una compra segura.</p>
+              <p className="mt-3 max-w-2xl text-amber-100/72">Enviá tu pedido por WhatsApp y coordiná directamente con Su Bodega.</p>
             </div>
             <Link href="/wines" className="text-gold hover:text-gold/80 underline">
               ← Volver al catálogo
@@ -171,13 +181,24 @@ export default function CartPage() {
                 </div>
               </div>
 
-              <button 
-                onClick={() => router.push('/buyer-auth')}
-                className="btn-premium w-full mb-3"
-                disabled={!stockValidation.ok}
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`mb-3 flex w-full items-center justify-center gap-2 rounded-full border px-4 py-3 text-sm font-medium transition ${
+                  stockValidation.ok
+                    ? 'border-[#25D366]/60 bg-[#25D366]/15 text-emerald-100 hover:bg-[#25D366]/25'
+                    : 'pointer-events-none border-amber-100/15 text-amber-100/35'
+                }`}
+                aria-disabled={!stockValidation.ok}
               >
-                {stockValidation.ok ? 'Proceder al pago' : 'Revisar stock'}
-              </button>
+                <span aria-hidden="true">WhatsApp</span>
+                {stockValidation.ok ? 'Enviar pedido por WhatsApp' : 'Revisar stock'}
+              </a>
+
+              <p className="mb-4 text-center text-xs leading-5 text-amber-100/60">
+                El dueño confirmará disponibilidad, entrega y los detalles del pedido por WhatsApp.
+              </p>
 
               <Link href="/wines" className="block w-full text-center px-4 py-3 border border-amber-100/20 rounded hover:border-gold text-amber-50">
                 Continuar comprando
@@ -197,7 +218,7 @@ export default function CartPage() {
                 </div>
                 <div className="flex gap-2">
                   <span className="text-gold">✓</span>
-                  <span>Hasta 6 cuotas sin interés en vinos</span>
+                  <span>Coordinación directa del pedido por WhatsApp</span>
                 </div>
               </div>
             </div>

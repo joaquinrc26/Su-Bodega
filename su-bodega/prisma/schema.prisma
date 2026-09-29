@@ -3,23 +3,37 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model Wine {
-  id         String     @id @default(cuid())
-  name       String
-  year       Int
-  price      Decimal    @default(0)
-  region     String?    @default("Sin especificar")
-  bodega     String?
-  maridaje   String?    @default("Versatile")
+  id          String          @id @default(cuid())
+  name        String
+  year        Int
+  price       Decimal         @default(0)
+  stock       Int             @default(0)
+  isActive    Boolean         @default(true)
+  region      String?         @default("Sin especificar")
+  bodega      String?
+  maridaje    String?         @default("Versatile")
+  category    ProductCategory @relation(fields: [categoryId], references: [id])
+  categoryId  String
   description String?
-  grapeType  GrapeType? @relation(fields: [grapeTypeId], references: [id])
+  grapeType   GrapeType?      @relation(fields: [grapeTypeId], references: [id])
   grapeTypeId String?
-  photos     Photo[]
-  createdAt  DateTime   @default(now())
+  photos      Photo[]
+  createdAt   DateTime        @default(now())
+}
+
+model ProductCategory {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  wines       Wine[]
+  createdAt   DateTime @default(now())
 }
 
 model GrapeType {
@@ -38,7 +52,7 @@ model Photo {
 model AdminUser {
   id        String   @id @default(cuid())
   email     String   @unique
-  password  String   // Almacenado en plaintext por simplicidad (en producción usar bcrypt)
+  password  String // Hash scrypt de la contraseña
   name      String
   createdAt DateTime @default(now())
 }
@@ -46,13 +60,13 @@ model AdminUser {
 model BuyerUser {
   id        String   @id @default(cuid())
   email     String   @unique
-  password  String   // Almacenado en plaintext por simplicidad (en producción usar bcrypt)
+  password  String // Hash scrypt de la contraseña
   name      String
   phone     String?
   address   String?
   city      String?
   zipCode   String?
-  orders     Order[]
+  orders    Order[]
   createdAt DateTime @default(now())
 }
 
@@ -68,22 +82,20 @@ model Order {
   shippingZip     String
   shippingCost    Decimal     @default(0)
   total           Decimal
-  paymentMethod   String      // "transferencia", "efectivo", "mercadopago"
-  status          String      @default("pending")  // "pending", "approved", "rejected", "cancelled"
-  mpPreferenceId  String?     // ID de preferencia de MercadoPago
-  mpPaymentId     String?     // ID de pago de MercadoPago
+  paymentMethod   String // Método acordado con el comprador
+  status          String      @default("pending") // "pending", "approved", "rejected", "cancelled"
   items           OrderItem[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 }
 
 model OrderItem {
-  id      String  @id @default(cuid())
-  orderId String
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  wineId  String
+  id       String  @id @default(cuid())
+  orderId  String
+  order    Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  wineId   String
   wineName String
   wineYear Int
-  price   Decimal
+  price    Decimal
   quantity Int
 }

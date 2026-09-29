@@ -61,12 +61,12 @@ function getStatusLabel(status: string) {
 
 function getPaymentLabel(paymentMethod: string) {
   switch (paymentMethod) {
-    case 'mercadopago':
-      return 'Mercado Pago';
     case 'efectivo':
       return 'Efectivo en entrega';
-    default:
+    case 'transferencia':
       return 'Transferencia bancaria';
+    default:
+      return 'Pago coordinado con la vinoteca';
   }
 }
 

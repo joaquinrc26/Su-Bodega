@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createAdminCookie, hashPassword } from '@/lib/auth';
+import { hashPassword, isAdminRequest } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
+  if (!isAdminRequest(request)) {
+    return NextResponse.json(
+      { error: 'Solo un administrador autenticado puede crear otra cuenta admin' },
+      { status: 403 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { email, password, name } = body;
@@ -36,8 +43,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Generar cookie
-    const response = NextResponse.json(
+    return NextResponse.json(
       { 
         success: true, 
         message: 'Cuenta creada exitosamente',
@@ -45,10 +51,6 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-
-    response.headers.set('Set-Cookie', createAdminCookie());
-
-    return response;
   } catch (error) {
     console.error('Error en registro:', error);
     return NextResponse.json(

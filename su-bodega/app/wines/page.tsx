@@ -7,24 +7,23 @@ import { useCart } from '@/lib/cart-context';
 
 type WinePhoto = { id: string; url: string };
 type GrapeType = { id: string; name: string };
+type ProductCategory = { id: string; slug: string; name: string };
 type Wine = {
   id: string;
   name: string;
   year: number;
   price?: number;
+  stock: number;
   region?: string;
   bodega?: string;
   maridaje?: string;
   description?: string;
   grapeType?: GrapeType | null;
+  category?: ProductCategory | null;
   photos: WinePhoto[];
 };
 
-type SectionType = 'vinos' | 'guardados' | 'whiskey';
-
-function normalizedText(wine: Wine) {
-  return `${wine.name} ${wine.description || ''} ${wine.bodega || ''} ${wine.grapeType?.name || ''}`.toLowerCase();
-}
+type SectionType = 'vinos' | 'guardados' | 'regaleria';
 
 export default function WinesPage() {
   const { addToCart, itemCount } = useCart();
@@ -51,10 +50,22 @@ export default function WinesPage() {
   }, [wines]);
 
   useEffect(() => {
+    function syncSectionWithHash() {
+      const hash = window.location.hash;
+      if (hash === '#guardados') setSection('guardados');
+      else if (hash === '#regaleria') setSection('regaleria');
+      else setSection('vinos');
+    }
+
+    syncSectionWithHash();
+    window.addEventListener('hashchange', syncSectionWithHash);
+
     fetch('/api/grapes')
       .then((res) => res.json())
       .then(setGrapes)
       .catch(() => setGrapes([]));
+
+    return () => window.removeEventListener('hashchange', syncSectionWithHash);
   }, []);
 
   useEffect(() => {
@@ -77,21 +88,21 @@ export default function WinesPage() {
 
   const sectionWines = useMemo(() => {
     if (section === 'guardados') {
-      return wines.filter((wine) => normalizedText(wine).includes('guardado'));
+      return wines.filter((wine) => wine.category?.slug === 'vino-guardado');
     }
 
-    if (section === 'whiskey') {
-      return wines.filter((wine) => {
-        const text = normalizedText(wine);
-        return text.includes('whisky') || text.includes('whiskey');
-      });
+    if (section === 'regaleria') {
+      return wines.filter((wine) => wine.category?.slug === 'regaleria');
     }
 
-    return wines.filter((wine) => {
-      const text = normalizedText(wine);
-      return !text.includes('guardado') && !text.includes('whisky') && !text.includes('whiskey');
-    });
+    return wines.filter((wine) => wine.category?.slug === 'vino');
   }, [wines, section]);
+
+  const sectionCounts = useMemo(() => ({
+    vinos: wines.filter((wine) => wine.category?.slug === 'vino').length,
+    guardados: wines.filter((wine) => wine.category?.slug === 'vino-guardado').length,
+    regaleria: wines.filter((wine) => wine.category?.slug === 'regaleria').length,
+  }), [wines]);
 
   const filteredWines = useMemo(() => {
     let result = [...sectionWines];
@@ -144,15 +155,15 @@ export default function WinesPage() {
   const sectionCopy = useMemo(() => {
     if (section === 'guardados') {
       return {
-        title: 'Vinos guardados',
+        title: 'Vinos únicos',
         subtitle: 'Seleccion curada y cargada manualmente por administracion.',
       };
     }
 
-    if (section === 'whiskey') {
+    if (section === 'regaleria') {
       return {
-        title: 'Whiskey',
-        subtitle: 'Seleccion de etiquetas de whiskey cargadas manualmente por administracion.',
+        title: 'Regalería',
+        subtitle: 'Regalos y accesorios seleccionados por la bodega.',
       };
     }
 
@@ -176,26 +187,46 @@ export default function WinesPage() {
     });
   };
 
+  const getStockLabel = (stock: number) => {
+    if (stock <= 0) return { label: 'Sin stock', className: 'text-red-200 border-red-300/25 bg-red-950/20' };
+    if (stock <= 3) return { label: `Poco stock · ${stock} unidades`, className: 'text-amber-200 border-amber-300/25 bg-amber-950/20' };
+    return { label: `Disponible · ${stock} unidades`, className: 'text-emerald-200 border-emerald-300/25 bg-emerald-950/20' };
+  };
+
   return (
     <main className="min-h-screen buyer-bodegon-bg text-amber-50">
       <div className="container-premium py-10 md:py-14">
-        <header className="wine-hero grain-overlay p-6 md:p-10 mb-8 md:mb-10">
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+        <header className="catalog-hero wine-hero grain-overlay p-6 md:p-10 mb-8 md:mb-10">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-4">
-              <span className="wine-section-label">Casa tradicional</span>
-              <h1 className="text-5xl md:text-7xl font-playfair leading-none">Su Bodega</h1>
-              <p className="text-xl md:text-2xl text-amber-100/90 font-serif">Los mejores Vinos del pais</p>
+              <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em] text-amber-100/55">
+                <span>Su Bodega</span>
+                <span className="text-gold/70">/</span>
+                <span className="text-gold">Colección</span>
+              </div>
+              <h1 className="max-w-3xl text-5xl font-playfair leading-[0.95] md:text-7xl">La colección</h1>
               <p className="max-w-2xl text-amber-100/80 leading-7">
-                Estilo de vinoteca clasica con alma de bodegon antiguo. El comprador solo visualiza productos ya cargados.
+                Etiquetas elegidas para descubrir, regalar y disfrutar. Encontrá tu próxima botella en una selección cuidada por Su Bodega.
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center">
+              <div className="catalog-stat">
+                <span className="text-[10px] uppercase tracking-[0.2em] text-gold/70">Etiquetas</span>
+                <strong>{wines.length}</strong>
+              </div>
+              <div className="catalog-stat">
+                <span className="text-[10px] uppercase tracking-[0.2em] text-gold/70">Secciones</span>
+                <strong>03</strong>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row lg:absolute lg:right-10 lg:top-10">
               <Link
                 href="/cart"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-gold/60 bg-black/40 px-5 py-3 text-sm hover:border-gold"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-gold/60 bg-black/40 px-5 py-3 text-sm transition hover:border-gold hover:bg-gold/10"
               >
-                Carrito
+                <span aria-hidden="true">🛒</span> Carrito
                 {itemCount > 0 && <span className="rounded-full bg-gold px-2 py-0.5 text-black font-semibold">{itemCount}</span>}
               </Link>
               <Link
@@ -209,7 +240,7 @@ export default function WinesPage() {
 
           <div className="wine-divider mt-8 mb-6" />
 
-          <nav className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <nav className="catalog-tabs grid grid-cols-1 gap-2 sm:grid-cols-3" aria-label="Secciones de la colección">
             <button
               type="button"
               onClick={() => setSection('vinos')}
@@ -219,8 +250,8 @@ export default function WinesPage() {
                   : 'border-amber-100/20 bg-black/15 text-amber-100 hover:border-gold/70'
               }`}
             >
-              <p className="text-sm uppercase tracking-[0.2em]">Seccion</p>
-              <p className="text-lg font-semibold mt-1">Vinos</p>
+              <span className="text-xs uppercase tracking-[0.2em]">01 · Tintos, blancos y rosados</span>
+              <span className="mt-2 flex items-center justify-between text-lg font-semibold">Vinos <small>{sectionCounts.vinos}</small></span>
             </button>
             <button
               type="button"
@@ -231,25 +262,32 @@ export default function WinesPage() {
                   : 'border-amber-100/20 bg-black/15 text-amber-100 hover:border-gold/70'
               }`}
             >
-              <p className="text-sm uppercase tracking-[0.2em]">Seccion</p>
-              <p className="text-lg font-semibold mt-1">Vinos guardados</p>
+              <span className="text-xs uppercase tracking-[0.2em]">02 · Tiempo y carácter</span>
+              <span className="mt-2 flex items-center justify-between text-lg font-semibold">Vinos únicos <small>{sectionCounts.guardados}</small></span>
             </button>
             <button
               type="button"
-              onClick={() => setSection('whiskey')}
+              onClick={() => setSection('regaleria')}
               className={`rounded-xl border px-4 py-3 text-left transition ${
-                section === 'whiskey'
+                section === 'regaleria'
                   ? 'border-gold bg-black/30 text-gold shadow-[0_18px_40px_rgba(0,0,0,0.2)]'
                   : 'border-amber-100/20 bg-black/15 text-amber-100 hover:border-gold/70'
               }`}
             >
-              <p className="text-sm uppercase tracking-[0.2em]">Seccion</p>
-              <p className="text-lg font-semibold mt-1">Whiskey</p>
+              <span className="text-xs uppercase tracking-[0.2em]">03 · Para celebrar</span>
+              <span className="mt-2 flex items-center justify-between text-lg font-semibold">Regalería <small>{sectionCounts.regaleria}</small></span>
             </button>
           </nav>
         </header>
 
-        <section className="wine-card p-5 md:p-7 mb-8">
+        <section className="catalog-filters wine-card p-5 md:p-7 mb-8">
+          <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <span className="wine-section-label">Encontrá tu etiqueta</span>
+              <h2 className="mt-3 text-2xl font-playfair">Filtrar colección</h2>
+            </div>
+            <p className="text-sm text-amber-100/55">Refiná la selección según tu ocasión.</p>
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
             <div className="lg:col-span-2">
               <label className="block text-xs uppercase tracking-[0.22em] text-amber-200/80 mb-2">Buscar</label>
@@ -320,7 +358,7 @@ export default function WinesPage() {
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+          <div className="mt-4 grid grid-cols-1 gap-4 items-end border-t border-gold/10 pt-4 md:grid-cols-3">
             <div>
               <label className="block text-xs uppercase tracking-[0.22em] text-amber-200/80 mb-2">Ordenar</label>
               <select
@@ -357,14 +395,14 @@ export default function WinesPage() {
           </div>
         </section>
 
-        <section className="mb-5 flex flex-col md:flex-row md:items-end md:justify-between gap-2">
+        <section className="mb-5 flex flex-col gap-3 border-b border-gold/15 pb-5 md:flex-row md:items-end md:justify-between">
           <div>
             <span className="wine-section-label">Colección visible</span>
             <h2 className="text-3xl font-playfair">{sectionCopy.title}</h2>
             <p className="text-amber-100/70 mt-1">{sectionCopy.subtitle}</p>
           </div>
-          <p className="text-sm text-amber-100/75">
-            Mostrando {filteredWines.length} de {sectionWines.length} etiquetas de la seccion
+          <p className="text-sm text-amber-100/60">
+            {filteredWines.length} {filteredWines.length === 1 ? 'etiqueta disponible' : 'etiquetas disponibles'}
           </p>
         </section>
 
@@ -378,35 +416,38 @@ export default function WinesPage() {
             <p className="text-amber-100/70 mt-2">Esta vista solo muestra productos cargados previamente por administracion.</p>
           </section>
         ) : (
-          <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+          <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {filteredWines.map((wine) => (
               <Link
                 key={wine.id}
                 href={`/wines/${wine.id}`}
-                className="wine-card overflow-hidden group hover:translate-y-[-4px] transition-transform"
+                className="catalog-product-card wine-card group overflow-hidden transition-transform hover:-translate-y-1"
               >
-                <div className="relative h-64 bg-black/40 overflow-hidden">
+                <div className="relative aspect-square overflow-hidden bg-[radial-gradient(circle_at_center,rgba(200,169,107,0.12),rgba(0,0,0,0.4)_62%)]">
                   {wine.photos[0] ? (
                     <Image
                       src={wine.photos[0].url}
                       alt={wine.name}
                       fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="object-contain p-5 group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
                     <div className="h-full w-full flex items-center justify-center text-amber-100/50">Sin imagen</div>
                   )}
                 </div>
 
-                <div className="p-5 flex flex-col gap-4">
+                <div className="flex min-h-[245px] flex-col gap-4 p-5">
                   <div>
-                    <h3 className="text-xl font-playfair leading-tight">{wine.name}</h3>
+                    <h3 className="text-xl font-playfair leading-tight text-amber-50">{wine.name}</h3>
                     <p className="text-sm text-amber-100/70 mt-1">
                       {wine.year}
                       {wine.region ? ` · ${wine.region}` : ''}
                     </p>
                     {wine.grapeType?.name && <p className="text-sm text-gold mt-1">Uva: {wine.grapeType.name}</p>}
                     {wine.bodega && <p className="text-xs text-amber-100/65 mt-1">Bodega: {wine.bodega}</p>}
+                    <span className={`mt-3 inline-flex rounded-full border px-2.5 py-1 text-[11px] ${getStockLabel(wine.stock).className}`}>
+                      {getStockLabel(wine.stock).label}
+                    </span>
                   </div>
 
                   <div className="wine-divider" />
@@ -414,13 +455,15 @@ export default function WinesPage() {
                   <div className="flex items-center justify-between mt-auto">
                     <div>
                       <p className="text-[11px] uppercase tracking-[0.24em] text-amber-100/55">Precio</p>
-                      <p className="text-lg font-semibold text-gold">${(wine.price || 0).toLocaleString('es-AR')}</p>
+                      <p className="text-xl font-semibold text-gold">${(wine.price || 0).toLocaleString('es-AR')}</p>
                     </div>
                     <button
+                      type="button"
                       onClick={(e) => handleAddToCart(e, wine)}
-                      className="rounded-full border border-gold/60 px-4 py-2 text-sm hover:border-gold hover:bg-gold/10"
+                      disabled={wine.stock <= 0}
+                      className="rounded-full border border-gold/60 px-4 py-2 text-sm transition hover:border-gold hover:bg-gold/10 disabled:cursor-not-allowed disabled:border-amber-100/15 disabled:text-amber-100/35 disabled:hover:bg-transparent"
                     >
-                      Agregar
+                      {wine.stock > 0 ? 'Agregar' : 'Agotado'}
                     </button>
                   </div>
                 </div>

@@ -169,7 +169,7 @@ export default function WineDetailPage({ params }: { params: Promise<{ id: strin
               </div>
               <div className="wine-stat">
                 <p className="text-[11px] uppercase tracking-[0.26em] text-gold/72">Compra</p>
-                <p className="mt-2 text-lg font-playfair">Checkout con cuenta buyer</p>
+                <p className="mt-2 text-lg font-playfair">Pedido por WhatsApp</p>
               </div>
             </div>
           </div>

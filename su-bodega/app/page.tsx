@@ -4,30 +4,9 @@ export default function Home() {
   return (
     <main className="buyer-bodegon-bg text-amber-50">
       <div className="container-premium py-8 md:py-12">
-      <header className="sticky top-3 z-40 mb-10 rounded-2xl border border-gold/20 bg-black/65 px-4 py-4 backdrop-blur md:px-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <span className="text-sm uppercase tracking-[0.4em] text-gold">Su Bodega</span>
-            <p className="mt-2 text-amber-100/72">Experiencia premium para compradores y gestión exclusiva para administración.</p>
-          </div>
-
-          <nav className="flex flex-wrap items-center gap-3">
-            <Link href="/wines" className="btn-premium">
-              Ver vinos
-            </Link>
-            <Link href="/buyer/orders" className="px-4 py-3 border rounded text-amber-50 border-amber-100/20 hover:border-gold">
-              Mis compras
-            </Link>
-            <Link href="/admin" className="px-4 py-3 border rounded text-amber-50 border-amber-100/20 hover:border-gold">
-              Ingreso admin
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      <section className="wine-hero grain-overlay p-8 md:p-12 lg:p-14">
-        <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
-          <div className="space-y-7">
+      <section className="home-cover grain-overlay p-8 md:p-12 lg:p-16">
+        <div className="flex min-h-[inherit] items-end">
+          <div className="max-w-2xl space-y-7">
             <span className="wine-section-label">Vinoteca de selección</span>
             <div className="space-y-4">
               <h1 className="max-w-4xl text-5xl font-playfair font-semibold leading-[0.95] md:text-7xl">
@@ -36,7 +15,7 @@ export default function Home() {
               <p className="text-2xl md:text-3xl text-gold/95 font-playfair">Los mejores Vinos del pais</p>
             </div>
             <p className="max-w-2xl text-lg leading-8 text-amber-100/78">
-              Una experiencia de compra con carácter de cava clásica: etiquetas curadas, navegación simple y un recorrido pensado para descubrir vinos, guardados y whiskey con identidad propia.
+              Una experiencia de compra con carácter de cava clásica: etiquetas curadas, navegación simple y un recorrido pensado para descubrir vinos, vinos únicos y regalería.
             </p>
             <div className="flex flex-col gap-4 sm:flex-row">
               <Link href="/wines" className="btn-premium px-6 py-4 text-base">
@@ -47,54 +26,45 @@ export default function Home() {
               </Link>
             </div>
           </div>
+        </div>
+      </section>
 
-          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-1">
-            <div className="wine-stat">
-              <p className="text-xs uppercase tracking-[0.3em] text-gold/75">Selección</p>
-              <p className="mt-3 text-2xl font-playfair">Etiquetas curadas</p>
-              <p className="mt-2 text-sm leading-6 text-amber-100/68">Catálogo cargado manualmente para mantener un perfil premium y coherente.</p>
-            </div>
-            <div className="wine-stat">
-              <p className="text-xs uppercase tracking-[0.3em] text-gold/75">Compra</p>
-              <p className="mt-3 text-2xl font-playfair">Checkout con cuenta</p>
-              <p className="mt-2 text-sm leading-6 text-amber-100/68">El comprador crea su cuenta, completa su compra y luego revisa su historial.</p>
-            </div>
-            <div className="wine-stat">
-              <p className="text-xs uppercase tracking-[0.3em] text-gold/75">Entrega</p>
-              <p className="mt-3 text-2xl font-playfair">Envío y retiro</p>
-              <p className="mt-2 text-sm leading-6 text-amber-100/68">Promoción de envío gratis y comunicación clara de sucursales y horarios.</p>
-            </div>
+      <section className="mt-16 grid gap-5 md:grid-cols-3">
+        <Link href="/wines#guardados" className="home-category-card home-category-unique group">
+          <div className="relative z-10 p-6">
+            <span className="wine-section-label">Selección</span>
+            <h2 className="mt-4 text-2xl font-semibold">Vinos únicos</h2>
+            <p className="mt-3 leading-7 text-amber-100/82">
+              Una sección especial para botellas con impronta de guarda, pensada para compradores que valoran evolución y carácter.
+            </p>
+            <span className="mt-5 inline-flex text-sm text-gold transition group-hover:translate-x-1">Explorar selección →</span>
           </div>
-        </div>
+        </Link>
+        <Link href="/wines" className="home-category-card home-category-varietals group">
+          <div className="relative z-10 p-6">
+            <span className="wine-section-label">Varietales</span>
+            <h2 className="mt-4 text-2xl font-semibold">Tipos por variedad</h2>
+            <p className="mt-3 leading-7 text-amber-100/82">
+              Malbec, Cabernet, Chardonnay y más, con filtros claros para descubrir la cava según gusto y ocasión.
+            </p>
+            <span className="mt-5 inline-flex text-sm text-gold transition group-hover:translate-x-1">Ver vinos →</span>
+          </div>
+        </Link>
+        <Link href="/wines#regaleria" className="home-category-card home-category-gifts group">
+          <div className="relative z-10 p-6">
+            <span className="wine-section-label">Presentación</span>
+            <h2 className="mt-4 text-2xl font-semibold">Regalería</h2>
+            <p className="mt-3 leading-7 text-amber-100/82">
+              Opciones para regalar y acompañar una buena botella, cargadas directamente por la administración.
+            </p>
+            <span className="mt-5 inline-flex text-sm text-gold transition group-hover:translate-x-1">Descubrir regalería →</span>
+          </div>
+        </Link>
       </section>
 
-      <section className="mt-16 grid gap-8 md:grid-cols-3">
-        <div className="wine-card p-6">
-          <span className="wine-section-label">Selección</span>
-          <h2 className="mt-4 text-2xl font-semibold">Vinos guardados</h2>
-          <p className="mt-3 leading-7 text-amber-100/72">
-            Una sección especial para botellas con impronta de guarda, pensada para compradores que valoran evolución y carácter.
-          </p>
-        </div>
-        <div className="wine-card p-6">
-          <span className="wine-section-label">Varietales</span>
-          <h2 className="mt-4 text-2xl font-semibold">Tipos por variedad</h2>
-          <p className="mt-3 leading-7 text-amber-100/72">
-            Malbec, Cabernet, Chardonnay y más, con filtros claros para descubrir la cava según gusto y ocasión.
-          </p>
-        </div>
-        <div className="wine-card p-6">
-          <span className="wine-section-label">Presentación</span>
-          <h2 className="mt-4 text-2xl font-semibold">Botellas con presencia</h2>
-          <p className="mt-3 leading-7 text-amber-100/72">
-            La imagen de cada botella acompaña la decisión de compra y vuelve la navegación más sensorial y cuidada.
-          </p>
-        </div>
-      </section>
-
-      <section className="mt-16 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+      <section className="mt-16">
         <div className="wine-card p-7 md:p-8">
-          <span className="wine-section-label">Recorrido buyer</span>
+          <span className="wine-section-label">Cómo comprar</span>
           <div className="mt-5 grid gap-4 md:grid-cols-3">
             <div className="rounded-2xl border border-gold/10 bg-black/20 p-5">
               <p className="text-gold text-sm">01</p>
@@ -103,18 +73,20 @@ export default function Home() {
             </div>
             <div className="rounded-2xl border border-gold/10 bg-black/20 p-5">
               <p className="text-gold text-sm">02</p>
-              <h3 className="mt-2 text-xl font-playfair">Compra</h3>
-              <p className="mt-2 text-sm leading-6 text-amber-100/68">Confirma tu carrito con una cuenta buyer y un checkout simple y claro.</p>
+              <h3 className="mt-2 text-xl font-playfair">Envía tu pedido</h3>
+              <p className="mt-2 text-sm leading-6 text-amber-100/68">Revisa el carrito y envíalo directamente a Su Bodega por WhatsApp.</p>
             </div>
             <div className="rounded-2xl border border-gold/10 bg-black/20 p-5">
               <p className="text-gold text-sm">03</p>
-              <h3 className="mt-2 text-xl font-playfair">Vuelve</h3>
-              <p className="mt-2 text-sm leading-6 text-amber-100/68">Consulta el historial de compras para repetir etiquetas o revisar entregas.</p>
+              <h3 className="mt-2 text-xl font-playfair">Coordina</h3>
+              <p className="mt-2 text-sm leading-6 text-amber-100/68">El dueño confirma disponibilidad, entrega y los detalles del pedido directamente por WhatsApp.</p>
             </div>
           </div>
         </div>
 
-        <div className="wine-card p-7 md:p-8">
+      </section>
+
+      <footer className="mt-16 wine-card p-7 md:p-8">
           <span className="wine-section-label">Atención</span>
           <h2 className="mt-4 text-3xl font-playfair">Sucursales</h2>
           <p className="mt-3 max-w-xl leading-7 text-amber-100/72">
@@ -133,26 +105,6 @@ export default function Home() {
               <p className="text-sm leading-6 text-amber-100/68">Sábados: 10 a 13 hs</p>
             </div>
           </div>
-        </div>
-      </section>
-
-      <footer className="mt-16 wine-card p-6 md:p-8">
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div>
-            <span className="wine-section-label">Identidad</span>
-            <h2 className="mt-4 text-2xl font-semibold">Una cava digital con tono de vinoteca real</h2>
-            <p className="mt-3 max-w-xl leading-7 text-amber-100/68">
-              La experiencia buyer fue pensada para priorizar etiquetas, información útil y una estética sobria, cálida y confiable.
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-gold/20 bg-black/30 p-5 h-fit">
-            <h3 className="text-lg font-semibold mb-3">Vistas separadas del proyecto</h3>
-            <p className="leading-7 text-amber-100/68">
-              Públicas: inicio, catálogo, detalle, carrito, checkout y estados de pago. Buyer: acceso y mis compras. Admin: login, dashboard y carga manual.
-            </p>
-          </div>
-        </div>
       </footer>
       </div>
     </main>

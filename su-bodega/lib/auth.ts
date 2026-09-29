@@ -1,7 +1,7 @@
-﻿import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'crypto';
+﻿import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 
 export const ADMIN_COOKIE_NAME = 'su-bodega-admin';
-export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'admin123');
 export const BUYER_COOKIE_NAME = 'su-bodega-buyer';
 
 const PASSWORD_PREFIX = 'scrypt';
@@ -30,9 +30,14 @@ export function verifyPassword(password: string, storedPassword: string): boolea
   return timingSafeEqual(actualKey, expectedKey);
 }
 
+function getCookieSecret() {
+  return process.env.AUTH_COOKIE_SECRET || (process.env.NODE_ENV === 'production' ? '' : ADMIN_PASSWORD);
+}
+
 function signCookieValue(value: string): string {
-  const secret = process.env.AUTH_COOKIE_SECRET || ADMIN_PASSWORD;
-  const signature = createHash('sha256').update(`${value}.${secret}`).digest('hex');
+  const secret = getCookieSecret();
+  if (!secret) throw new Error('AUTH_COOKIE_SECRET es obligatorio en producción');
+  const signature = createHmac('sha256', secret).update(value).digest('hex');
   return `${value}.${signature}`;
 }
 
@@ -42,9 +47,11 @@ function verifyCookieValue(token: string | null | undefined): boolean {
   const [value, signature] = token.split('.');
   if (!value || !signature) return false;
 
-  const secret = process.env.AUTH_COOKIE_SECRET || ADMIN_PASSWORD;
-  const expectedSignature = createHash('sha256').update(`${value}.${secret}`).digest('hex');
-  return signature === expectedSignature;
+  const secret = getCookieSecret();
+  if (!secret) return false;
+  const expectedSignature = createHmac('sha256', secret).update(value).digest();
+  const actualSignature = Buffer.from(signature, 'hex');
+  return actualSignature.length === expectedSignature.length && timingSafeEqual(actualSignature, expectedSignature);
 }
 
 export function parseCookies(cookieHeader: string | null | undefined) {
@@ -59,6 +66,7 @@ export function parseCookies(cookieHeader: string | null | undefined) {
 
 export function isAdminToken(token: string | null | undefined): boolean {
   if (!token) return false;
+  if (token.split('.')[0] !== 'admin') return false;
   return verifyCookieValue(token);
 }
 
@@ -68,16 +76,17 @@ export function isAdminRequest(request: Request): boolean {
 }
 
 export function createAdminCookie(): string {
-  return `${ADMIN_COOKIE_NAME}=${signCookieValue(ADMIN_PASSWORD)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800`;
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  return `${ADMIN_COOKIE_NAME}=${signCookieValue('admin')}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800${secure}`;
 }
 
 export function clearAdminCookie(): string {
-  return `${ADMIN_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  return `${ADMIN_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`;
 }
 
 export function isBuyerToken(token: string | null | undefined): boolean {
   if (!token) return false;
-  if (!token.includes('.')) return true;
   return verifyCookieValue(token);
 }
 
@@ -89,14 +98,16 @@ export function isBuyerRequest(request: Request): boolean {
 export function getBuyerIdFromCookie(request: Request): string | null {
   const cookies = parseCookies(request.headers.get('cookie'));
   const token = cookies[BUYER_COOKIE_NAME];
-  if (!token) return null;
+  if (!token || !verifyCookieValue(token)) return null;
   return token.split('.')[0] || token;
 }
 
 export function createBuyerCookie(buyerId: string): string {
-  return `${BUYER_COOKIE_NAME}=${signCookieValue(buyerId)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800`;
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  return `${BUYER_COOKIE_NAME}=${signCookieValue(buyerId)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800${secure}`;
 }
 
 export function clearBuyerCookie(): string {
-  return `${BUYER_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  return `${BUYER_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`;
 }

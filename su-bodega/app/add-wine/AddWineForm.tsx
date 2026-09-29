@@ -5,10 +5,35 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 type Grape = { id: string; name: string };
+type ProductCategory = { id: string; slug: string; name: string; isActive: boolean };
 type FilePreview = { file: File; preview: string };
+type WinePhoto = { id: string; url: string };
+type WineRecord = {
+  id: string;
+  name: string;
+  year: number;
+  price: number;
+  stock: number;
+  isActive: boolean;
+  region?: string | null;
+  bodega?: string | null;
+  maridaje?: string | null;
+  description?: string | null;
+  category?: ProductCategory | null;
+  grapeType?: Grape | null;
+  photos: WinePhoto[];
+};
+
+const MAX_PHOTOS = 3;
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 export default function AddWineForm() {
   const [grapes, setGrapes] = useState<Grape[]>([]);
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
+  const [wines, setWines] = useState<WineRecord[]>([]);
+  const [editingWineId, setEditingWineId] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [selectedGrapeId, setSelectedGrapeId] = useState<string | null>(null);
   const [newGrapeName, setNewGrapeName] = useState('');
 
@@ -19,6 +44,8 @@ export default function AddWineForm() {
 
   // Campos nuevos
   const [price, setPrice] = useState('');
+  const [stock, setStock] = useState<number | ''>(0);
+  const [isActive, setIsActive] = useState(true);
   const [region, setRegion] = useState('');
   const [bodega, setBodega] = useState('');
   const [maridaje, setMaridaje] = useState('');
@@ -35,14 +62,59 @@ export default function AddWineForm() {
       .catch(() => setGrapes([]));
   }, []);
 
+  useEffect(() => {
+    loadWines();
+  }, []);
+
+  async function loadWines() {
+    try {
+      const response = await fetch('/api/wines?includeInactive=1');
+      const data = await response.json();
+      if (!response.ok) throw new Error();
+      setWines(Array.isArray(data) ? data : []);
+    } catch {
+      setWines([]);
+    }
+  }
+
+  useEffect(() => {
+    fetch('/api/categories')
+      .then((response) => response.json())
+      .then((data: ProductCategory[]) => {
+        setCategories(data);
+        setSelectedCategoryId(data.find((category) => category.slug === 'vino')?.id || data[0]?.id || '');
+      })
+      .catch(() => setCategories([]));
+  }, []);
+
   function handleFileChange(files?: FileList | null) {
     if (!files) {
       setFilePreviews([]);
       return;
     }
 
+    const selectedFiles = Array.from(files);
+    if (selectedFiles.length > MAX_PHOTOS) {
+      setMessage(`Podés cargar hasta ${MAX_PHOTOS} fotos por producto.`);
+      return;
+    }
+
+    const invalidFile = selectedFiles.find(
+      (file) => !ALLOWED_IMAGE_TYPES.has(file.type) || file.size > MAX_IMAGE_BYTES
+    );
+    if (invalidFile) {
+      setMessage(
+        !ALLOWED_IMAGE_TYPES.has(invalidFile.type)
+          ? 'Usá imágenes JPG, PNG o WEBP.'
+          : 'Cada imagen puede pesar hasta 5 MB.'
+      );
+      return;
+    }
+
+    setMessage(null);
+
     Promise.all(
-      Array.from(files).map(
+      selectedFiles.map(
         (file) =>
           new Promise<FilePreview>((resolve) => {
             const reader = new FileReader();
@@ -62,25 +134,6 @@ export default function AddWineForm() {
     if (!response.ok) throw new Error(await response.text());
     const json = await response.json();
     return json.url as string;
-  }
-
-  async function uploadFileClientDirect(file: File) {
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-
-    if (!cloudName || !uploadPreset) {
-      throw new Error('Cloudinary no configurado para subida directa');
-    }
-
-    const url = `https://api.cloudinary.com/v1_1/${cloudName}/upload`;
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', uploadPreset);
-
-    const response = await fetch(url, { method: 'POST', body: formData });
-    if (!response.ok) throw new Error('Error en la subida directa');
-    const data = await response.json();
-    return data.secure_url as string;
   }
 
   async function createGrape() {
@@ -116,16 +169,22 @@ export default function AddWineForm() {
       return;
     }
 
+    if (!selectedCategoryId) {
+      setMessage('Seleccione una sección');
+      return;
+    }
+
+    if (stock === '' || Number(stock) < 0 || !Number.isInteger(Number(stock))) {
+      setMessage('Ingrese un stock válido');
+      return;
+    }
+
     setUploading(true);
     try {
       const photos: string[] = [];
 
       for (const preview of filePreviews) {
-        try {
-          photos.push(await uploadFileServer(preview.preview));
-        } catch {
-          photos.push(await uploadFileClientDirect(preview.file));
-        }
+        photos.push(await uploadFileServer(preview.preview));
       }
 
       type WinePayload = {
@@ -133,6 +192,9 @@ export default function AddWineForm() {
         year: number;
         description: string;
         price: string;
+        stock: number;
+        categoryId: string;
+        isActive: boolean;
         region?: string;
         bodega?: string;
         maridaje?: string;
@@ -146,6 +208,9 @@ export default function AddWineForm() {
         year: Number(year),
         description,
         price,
+        stock: Number(stock),
+        categoryId: selectedCategoryId,
+        isActive,
         region: region || 'Sin especificar',
         bodega: bodega || '',
         maridaje: maridaje || 'Versatile',
@@ -158,10 +223,13 @@ export default function AddWineForm() {
         payload.grapeTypeName = newGrapeName.trim();
       }
 
-      const response = await fetch('/api/wines', {
-        method: 'POST',
+      const response = await fetch(editingWineId ? `/api/wines/${editingWineId}` : '/api/wines', {
+        method: editingWineId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...payload,
+          replacePhotos: Boolean(editingWineId && photos.length),
+        }),
       });
 
       if (!response.ok) {
@@ -169,12 +237,17 @@ export default function AddWineForm() {
         return;
       }
 
-      setMessage('✅ Vino creado correctamente');
+      setMessage(editingWineId ? '✅ Los cambios se guardaron correctamente.' : '✅ Producto creado correctamente.');
+      await loadWines();
       // Limpiar formulario
+      setEditingWineId(null);
       setName('');
       setYear(new Date().getFullYear());
       setDescription('');
       setPrice('');
+      setStock(0);
+      setIsActive(true);
+      setSelectedCategoryId(categories.find((category) => category.slug === 'vino')?.id || categories[0]?.id || '');
       setRegion('');
       setBodega('');
       setMaridaje('');
@@ -193,6 +266,56 @@ export default function AddWineForm() {
     setFilePreviews((current) => current.filter((_, i) => i !== index));
   }
 
+  function editWine(wine: WineRecord) {
+    setEditingWineId(wine.id);
+    setName(wine.name);
+    setYear(wine.year);
+    setDescription(wine.description || '');
+    setPrice(String(wine.price));
+    setStock(wine.stock);
+    setIsActive(wine.isActive);
+    setSelectedCategoryId(wine.category?.id || '');
+    setSelectedGrapeId(wine.grapeType?.id || null);
+    setRegion(wine.region || '');
+    setBodega(wine.bodega || '');
+    setMaridaje(wine.maridaje || '');
+    setFilePreviews([]);
+    setMessage(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function resetForm() {
+    setEditingWineId(null);
+    setName('');
+    setYear(new Date().getFullYear());
+    setDescription('');
+    setPrice('');
+    setStock(0);
+    setIsActive(true);
+    setSelectedCategoryId(categories.find((category) => category.slug === 'vino')?.id || categories[0]?.id || '');
+    setSelectedGrapeId(null);
+    setNewGrapeName('');
+    setRegion('');
+    setBodega('');
+    setMaridaje('');
+    setFilePreviews([]);
+    setMessage(null);
+  }
+
+  async function deleteWine(wine: WineRecord) {
+    if (!window.confirm(`¿Querés eliminar "${wine.name}"?`)) return;
+
+    const response = await fetch(`/api/wines/${wine.id}`, { method: 'DELETE' });
+    if (!response.ok) {
+      setMessage('No pudimos eliminar el producto. Intentá nuevamente.');
+      return;
+    }
+
+    if (editingWineId === wine.id) resetForm();
+    await loadWines();
+    setMessage('El producto se eliminó correctamente.');
+  }
+
   return (
     <div className="min-h-screen buyer-bodegon-bg text-amber-50">
       <div className="container-premium py-10 md:py-14">
@@ -200,19 +323,19 @@ export default function AddWineForm() {
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <span className="wine-section-label">Carga de productos</span>
-              <h1 className="mt-4 text-5xl md:text-6xl font-playfair text-amber-50">Agregar Vino</h1>
+              <h1 className="mt-4 text-5xl md:text-6xl font-playfair text-amber-50">Agregar producto</h1>
               <p className="mt-3 max-w-2xl text-lg leading-8 text-amber-100/74">
                 Completa el formulario con todos los detalles del vino. Fotos, región, maridaje y descripción harán que tu catálogo sea rico y accesible.
               </p>
               <p className="mt-4 text-sm text-amber-100/62">
-                💡 Tip: Usa &quot;Guardado&quot; o &quot;Whiskey&quot; en nombre/bodega para que aparezca en esas secciones del catálogo.
+                Elegí una de las tres secciones para que el producto aparezca en el lugar correcto del catálogo.
               </p>
             </div>
 
             <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-1">
               <div className="wine-stat">
                 <p className="text-[11px] uppercase tracking-[0.26em] text-gold/72">Campos</p>
-                <p className="mt-2 text-lg font-playfair">5 secciones</p>
+                <p className="mt-2 text-lg font-playfair">3 secciones</p>
               </div>
               <div className="wine-stat">
                 <p className="text-[11px] uppercase tracking-[0.26em] text-gold/72">Fotos</p>
@@ -241,6 +364,43 @@ export default function AddWineForm() {
           </Link>
         </div>
 
+        <section className="wine-card p-7 md:p-9 mb-10">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <span className="wine-section-label">Administración</span>
+              <h2 className="mt-3 text-3xl font-playfair text-amber-50">Mis productos</h2>
+              <p className="mt-2 text-amber-100/65">Desde acá podés revisar, editar, activar o eliminar lo que aparece en la tienda.</p>
+            </div>
+            <button type="button" onClick={resetForm} className="btn-premium px-5 py-3">
+              + Agregar producto
+            </button>
+          </div>
+
+          <div className="mt-6 space-y-3">
+            {wines.length === 0 && <p className="rounded-lg border border-amber-100/10 p-5 text-amber-100/65">Todavía no hay productos cargados.</p>}
+            {wines.map((wine) => (
+              <article key={wine.id} className="flex flex-col gap-4 rounded-xl border border-amber-100/10 bg-black/20 p-4 md:flex-row md:items-center">
+                <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-gold/20 bg-black/30">
+                  {wine.photos[0]?.url ? (
+                    <Image src={wine.photos[0].url} alt={wine.name} width={80} height={80} className="h-full w-full object-cover" />
+                  ) : <div className="flex h-full items-center justify-center text-xs text-amber-100/40">Sin foto</div>}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate text-lg font-semibold text-amber-50">{wine.name}</h3>
+                  <p className="mt-1 text-sm text-amber-100/60">{wine.category?.name || 'Sin sección'} · ${Number(wine.price).toLocaleString('es-AR')}</p>
+                  <p className="mt-1 text-sm text-amber-100/75">
+                    Stock: {wine.stock} unidades · {wine.isActive ? 'Disponible' : 'No disponible'}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <button type="button" onClick={() => editWine(wine)} className="rounded-full border border-gold/50 px-4 py-2 text-sm text-gold hover:bg-gold/10">Editar</button>
+                  <button type="button" onClick={() => deleteWine(wine)} className="rounded-full border border-red-300/30 px-4 py-2 text-sm text-red-200 hover:bg-red-900/20">Eliminar</button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Sección 1: Información Básica */}
           <section className="wine-card p-8 md:p-10">
@@ -248,7 +408,7 @@ export default function AddWineForm() {
             <h2 className="text-2xl font-playfair font-semibold mb-6 mt-4 text-amber-50">Información Básica</h2>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               <div>
-                <label className="block text-sm font-medium mb-2 text-amber-100/80">Nombre del Vino *</label>
+                <label className="block text-sm font-medium mb-2 text-amber-100/80">Nombre del producto *</label>
                 <input
                   type="text"
                   value={name}
@@ -257,6 +417,37 @@ export default function AddWineForm() {
                   className="w-full border border-gold/20 rounded-lg p-3 bg-black/30 text-amber-50 placeholder-amber-100/40 focus:border-gold focus:outline-none"
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-amber-100/80">Sección *</label>
+                <select
+                  value={selectedCategoryId}
+                  onChange={(event) => setSelectedCategoryId(event.target.value)}
+                  className="w-full border border-gold/20 rounded-lg p-3 bg-black/30 text-amber-50 focus:border-gold focus:outline-none"
+                >
+                  <option value="">Seleccionar sección</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>{category.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-amber-100/80">Stock *</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={stock}
+                  onChange={(event) => setStock(event.target.value === '' ? '' : Number(event.target.value))}
+                  className="w-full border border-gold/20 rounded-lg p-3 bg-black/30 text-amber-50 focus:border-gold focus:outline-none"
+                />
+              </div>
+
+              <label className="flex items-center gap-3 text-sm text-amber-100/80">
+                <input type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} />
+                Disponible para comprar
+              </label>
 
               <div>
                 <label className="block text-sm font-medium mb-2 text-amber-100/80">Año *</label>
@@ -378,13 +569,13 @@ export default function AddWineForm() {
 
             <div className="mb-6">
               <label className="block text-sm font-medium mb-3 text-amber-100/80">
-                Selecciona una o varias fotos (recomendado: mínimo 1)
+                Fotos del producto (opcional)
               </label>
               <div className="border-2 border-dashed border-gold/30 rounded-lg p-8 text-center hover:border-gold hover:bg-gold/5 transition-all cursor-pointer">
                 <input
                   type="file"
                   multiple
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
                   onChange={(e) => handleFileChange(e.target.files)}
                   className="hidden"
                   id="file-input"
@@ -395,7 +586,8 @@ export default function AddWineForm() {
                     Arrastra fotos aquí o{' '}
                     <span className="text-gold font-semibold">haz clic para seleccionar</span>
                   </p>
-                  <p className="text-xs text-amber-100/60 mt-2">JPG, PNG · Máx 5 fotos</p>
+                  <p className="text-xs text-amber-100/60 mt-2">Hasta 3 fotos · JPG, PNG o WEBP · Máximo 5 MB cada una · Podés agregarlas después</p>
+                  <p className="text-xs text-gold/85 mt-1">Se guardan en formato cuadrado para el catálogo.</p>
                 </label>
               </div>
             </div>
@@ -404,18 +596,18 @@ export default function AddWineForm() {
             {filePreviews.length > 0 && (
               <div>
                 <p className="text-sm font-medium mb-4 text-amber-100/80">Fotos seleccionadas ({filePreviews.length})</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {filePreviews.map((preview, index) => (
                     <div
                       key={index}
-                      className="relative group rounded-lg overflow-hidden border border-gold/15 bg-black/20"
+                      className="relative aspect-square group overflow-hidden rounded-lg border border-gold/15 bg-black/20"
                     >
                       <Image
                         src={preview.preview}
                         alt={`preview-${index}`}
                         width={150}
                         height={150}
-                        className="w-full h-40 object-cover group-hover:brightness-75 transition-all"
+                        className="h-full w-full object-cover transition-all group-hover:brightness-75"
                       />
                       <button
                         type="button"
@@ -442,24 +634,12 @@ export default function AddWineForm() {
                 type="submit"
                 className="btn-premium w-full py-4 text-lg font-semibold disabled:opacity-50"
               >
-                {uploading ? '⏳ Guardando...' : '✅ Guardar Vino'}
+                {uploading ? '⏳ Guardando...' : editingWineId ? '✅ Guardar cambios' : '✅ Guardar producto'}
               </button>
 
               <button
                 type="button"
-                onClick={() => {
-                  setName('');
-                  setYear(new Date().getFullYear());
-                  setDescription('');
-                  setPrice('');
-                  setRegion('');
-                  setBodega('');
-                  setMaridaje('');
-                  setSelectedGrapeId(null);
-                  setNewGrapeName('');
-                  setFilePreviews([]);
-                  setMessage(null);
-                }}
+                onClick={resetForm}
                 className="w-full px-6 py-3 border border-gold/20 rounded-full text-amber-50 hover:border-gold hover:bg-gold/5 transition-all"
               >
                 🔄 Limpiar formulario

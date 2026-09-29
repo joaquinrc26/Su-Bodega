@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 
 const WHATSAPP_URL =
-  'https://wa.me/5492214366338?text=Hola%20Su%20Bodega%2C%20soy%20comprador%20y%20quiero%20asesoramiento%20sobre%20vinos%20y%20promociones.%20%C2%BFMe%20pueden%20ayudar%3F';
+  'https://wa.me/5492214366342?text=Hola%20Su%20Bodega%2C%20soy%20comprador%20y%20quiero%20asesoramiento%20sobre%20vinos%20y%20promociones.%20%C2%BFMe%20pueden%20ayudar%3F';
 const INSTAGRAM_URL = 'https://www.instagram.com/subodega/';
 
 export default function SocialFloatingButtons() {
