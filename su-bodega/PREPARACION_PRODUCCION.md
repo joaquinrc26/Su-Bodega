@@ -52,10 +52,10 @@ La aplicación es una tienda Next.js con catálogo administrado desde un panel, 
 
 Para desplegar Next.js en una plataforma serverless o administrada, usar PostgreSQL administrado:
 
-1. Crear una base PostgreSQL de producción y una base separada para pruebas/staging.
+1. Crear una base PostgreSQL de producción y una base separada para pruebas/staging. En Neon, usar la URL pooled para la app y la URL directa para migraciones.
 2. El proyecto ya declara `provider = "postgresql"` y contiene una migración inicial PostgreSQL. Si aparecen datos del sitio anterior, definir una importación aparte antes de producción.
 3. Probar la migración inicial sobre la base de staging antes de producción.
-4. Ejecutar `npx prisma migrate deploy` como paso de despliegue controlado. No usar `prisma db push` para actualizar producción ni correr seeds de desarrollo.
+4. Ejecutar `npm run db:deploy` como paso de despliegue controlado. No usar `prisma db push` para actualizar producción. El seed inicial crea categorías y un solo admin si ese email todavía no existe; ejecutarlo únicamente con las credenciales de producción correctas.
 5. Verificar conexiones, límites del proveedor y estrategia de backup/restauración.
 6. Conectar el repositorio a la plataforma, seleccionar la carpeta `su-bodega` como raíz del proyecto y usar Node.js LTS compatible con Next.js 15.
 7. Configurar el comando de instalación/build de acuerdo con el proveedor. El build del proyecto es `npm run build`; el servidor Node tradicional arranca con `npm start`.
@@ -72,6 +72,7 @@ Definirlas en el gestor de secretos del proveedor; nunca subir valores reales al
 | Variable | Uso | Requisito de producción |
 | --- | --- | --- |
 | `DATABASE_URL` | Conexión de Prisma | URL de PostgreSQL tras la migración recomendada, o ruta absoluta/persistente para la alternativa SQLite |
+| `DIRECT_URL` | Migraciones Prisma | URL directa de PostgreSQL; en Neon, usar la cadena no pooled |
 | `ADMIN_PASSWORD` | Fallback de autenticación admin existente | Contraseña fuerte, única y no reutilizada; no dejar el valor de desarrollo. Idealmente retirar el fallback en favor de usuarios admin gestionados |
 | `AUTH_COOKIE_SECRET` | Firma de cookies | Cadena aleatoria larga, distinta por entorno |
 | `CLOUDINARY_CLOUD_NAME` | Cuenta de imágenes | Cuenta validada por el dueño |
@@ -96,7 +97,7 @@ No definir secretos con prefijo `NEXT_PUBLIC_`: Next.js los expone al navegador.
 
 - [ ] `npm ci` instala desde el lockfile.
 - [ ] `npx prisma generate` completa sin errores.
-- [ ] `npx prisma migrate deploy` termina correctamente en una base vacía de staging.
+- [ ] `npm run db:deploy` termina correctamente en una base vacía de staging.
 - [ ] `npm run lint` y `npm run build` pasan.
 - [ ] Admin: acceso correcto, logout, rechazo de sesión inválida y operaciones protegidas.
 - [ ] Catálogo: productos visibles, fotos Cloudinary, filtros y detalle.

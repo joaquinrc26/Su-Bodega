@@ -24,6 +24,7 @@ Editá `.env` y ajustá variables si es necesario. Para navegar y probar el cat�
 
 ```
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE?sslmode=require"
+DIRECT_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE?sslmode=require"
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloud-name
 NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=your-unsigned-preset
 ```
@@ -43,7 +44,7 @@ npx prisma migrate deploy
 npx prisma db seed
 ```
 
-El seed es para desarrollo o staging. No lo ejecutes en producción: crea o actualiza el administrador definido por `ADMIN_EMAIL` y `ADMIN_PASSWORD`.
+Para el primer despliegue, ejecutá el seed una sola vez con `ADMIN_EMAIL` y `ADMIN_PASSWORD` configurados. Crea las categorías y el único admin inicial; si ya existe ese email, no cambia su contraseña. No uses el seed para restablecer credenciales.
 
 4. Levantá el servidor de desarrollo:
 

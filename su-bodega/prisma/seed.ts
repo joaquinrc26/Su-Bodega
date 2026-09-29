@@ -28,23 +28,23 @@ async function main() {
     create: { slug: 'regaleria', name: 'Regalería', description: 'Regalos y accesorios de la bodega' },
   });
 
-  // Crear cuenta de admin de prueba
-  const adminEmail = process.env.ADMIN_EMAIL || 'admin@bodega.com';
+  const adminEmail = process.env.ADMIN_EMAIL || (process.env.NODE_ENV === 'production' ? '' : 'admin@bodega.com');
   const adminPassword = process.env.ADMIN_PASSWORD;
-  if (!adminPassword) {
-    throw new Error('ADMIN_PASSWORD es obligatorio para ejecutar el seed');
+  if (!adminEmail || !adminPassword) {
+    throw new Error('ADMIN_EMAIL y ADMIN_PASSWORD son obligatorios para crear la cuenta admin');
   }
-  const admin = await prisma.adminUser.upsert({
-    where: { email: adminEmail },
-    update: { password: hashPassword(adminPassword), name: 'Administrador Su Bodega' },
-    create: {
-      email: adminEmail,
-      password: hashPassword(adminPassword),
-      name: 'Administrador Su Bodega',
-    },
-  });
+  const existingAdmin = await prisma.adminUser.findUnique({ where: { email: adminEmail } });
+  if (!existingAdmin) {
+    await prisma.adminUser.create({
+      data: {
+        email: adminEmail,
+        password: hashPassword(adminPassword),
+        name: 'Administrador Su Bodega',
+      },
+    });
+  }
 
-  console.log('✅ Cuenta de admin creada:', admin);
+  console.log('✅ Cuenta admin inicial verificada:', adminEmail);
   console.log('✅ Categoría base creada:', vinoCategory);
 }
 
