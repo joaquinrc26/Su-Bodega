@@ -1,130 +1,76 @@
-# Su Bodega: guía de preparación para producción
+# Estado de producción y guía de cambios
 
-Esta guía reúne las decisiones y tareas necesarias para publicar Su Bodega con dominio propio, operar la tienda de forma segura y mantenerla después del lanzamiento.
+Actualizado el **5 de octubre de 2026**. Esta guía es el registro operativo para continuar el proyecto después del despliegue.
 
-## Estado actual
+## Producción actual
 
-La aplicación es una tienda Next.js con catálogo administrado desde un panel, imágenes en Cloudinary y carrito que prepara un pedido para enviar por WhatsApp. El pedido y sus condiciones se coordinan directamente entre el cliente y el dueño; el recorrido público no debe pedir cuenta, mostrar tarjeta ni integrar MercadoPago.
+- Sitio: https://subodega.com.ar
+- Admin: https://subodega.com.ar/admin
+- Plataforma: Vercel; raíz configurada como `su-bodega/`.
+- Repositorio: https://github.com/joaquinrc26/Su-Bodega
+- Rama de producción: `preparacion-vercel`; `main` se conserva separada.
+- Base de datos: Neon PostgreSQL, base `neondb`, rama Neon predeterminada nombrada `preparacion-vercel`.
+- Migración inicial PostgreSQL aplicada; Prisma reporta el esquema al día.
+- Seed ejecutado: categorías y admin inicial verificados.
+- Admin único: `subodega@hotmail.com`. No documentar su contraseña.
+- Dominio añadido a Vercel; SSL validado. DNS permanece administrado en Ferozo.
+- Variables privadas se guardan en Vercel y en `.env` local ignorado; nunca en Git.
 
-**No publicar todavía.** Antes de habilitar el dominio deben cerrarse los bloqueos P0 de esta guía, elegirse hosting/base de datos y probarse el despliegue con datos de producción.
+## Arquitectura y recorrido de cliente
 
-## P0: bloqueos antes de publicar
+El visitante explora `/wines`, agrega productos y desde `/cart` abre un mensaje preparado para WhatsApp. El dueño confirma stock, entrega, total y forma de pago por chat. El sitio no usa MercadoPago ni tarjetas. El mensaje no crea una orden en la base ni reserva inventario.
 
-- [ ] **Rotar las credenciales de Cloudinary.** Antes se encontraron valores con aspecto de credenciales en `.env.example`; el ejemplo local ya fue saneado, pero eso no invalida los valores anteriores. Revocarlos y generar credenciales nuevas desde Cloudinary. Si el archivo llegó a un repositorio remoto, asumir que quedaron expuestos y limpiar el historial cuando corresponda; no reutilizarlos.
-- [x] **Limpiar `.env.example`.** La plantilla local ya usa placeholders. Mantenerla sin secretos; las credenciales reales solo van en el gestor de secretos del hosting o en un `.env` local ignorado por Git.
-- [x] **Cerrar el alta pública de administradores.** La ruta `POST /api/auth/register` ahora exige una sesión admin; la pantalla pública ya no ofrece crear cuentas.
-- [ ] **Eliminar las credenciales de desarrollo.** El proyecto usa valores de admin de desarrollo por defecto y el seed crea una cuenta de prueba con contraseña conocida. No ejecutar `prisma db seed` en producción. Crear el usuario admin de producción de forma controlada y cambiar cualquier credencial compartida durante el desarrollo.
-- [x] **Elegir la estrategia de base de datos antes de elegir el hosting.** Prisma ya está configurado para PostgreSQL y el repositorio contiene una línea base PostgreSQL para una base nueva. Crear la base en Neon/Supabase y ejecutar `npx prisma migrate deploy`; no usar SQLite en Vercel.
-- [ ] **Verificar autenticación admin en HTTPS.** Generar un `AUTH_COOKIE_SECRET` aleatorio, largo y exclusivo de producción. Revisar las cookies para que usen `Secure` en producción, mantener `HttpOnly` y `SameSite`, y probar login, logout y acceso denegado sin sesión.
-- [ ] **Revisar y limitar el acceso al panel y a sus APIs.** Comprobar que todas las operaciones de escritura exigen admin autenticado y que no existe otra ruta que permita alta o cambio de permisos sin autorización.
-- [ ] **Confirmar el WhatsApp comercial.** El número está fijado en el código en más de un lugar. Verificarlo con el dueño y probar desde un teléfono real tanto el botón flotante como “Enviar pedido por WhatsApp”. El mensaje debe mostrar productos, cantidades y total; el dueño debe confirmar stock, envío y monto final por chat.
-- [ ] **Confirmar precios, stock y logística.** Revisar todos los productos, que no haya precios de prueba, definir zonas y costo de envío, el umbral de envío gratis, horarios, direcciones y medios de contacto publicados. El mensaje preparado por el carrito no crea una orden ni reserva stock: el dueño debe validar disponibilidad y total en WhatsApp.
+El panel `/admin` permite gestionar productos e imágenes. La tienda muestra hasta tres productos por fila en desktop y se adapta a móvil. Cada producto acepta hasta tres fotos; al guardar fotos nuevas desde editar se sustituyen las anteriores.
 
-## P1: terminar el producto
+## Variables y servicios
 
-### Administración
+Neon–Vercel proporciona automáticamente:
 
-- [ ] Probar alta, edición, ocultamiento, reactivación y eliminación de productos, categorías, variedades e imágenes con una cuenta admin de producción.
-- [ ] Decidir si el dueño necesita registrar y consultar los pedidos recibidos. Actualmente el carrito los deriva a WhatsApp y no crea una orden en la base de datos ni ofrece un historial operativo al administrador.
-- [ ] Confirmar quiénes pueden ser administradores y cómo se recupera el acceso. Evitar cuentas compartidas si varias personas gestionan el catálogo.
-- [ ] Verificar que la vista pública y el dashboard admin se distingan claramente y que la vista pública no exponga controles de gestión.
+- `DATABASE_URL`: conexión pooled para la aplicación.
+- `DATABASE_URL_UNPOOLED`: conexión directa que usa `prisma migrate deploy`.
 
-### Tienda y contenido
+Variables adicionales en Vercel:
 
-- [ ] Revisar la tienda en móvil y escritorio: inicio, catálogo, filtros, detalle, carrito, enlaces sociales y estados sin productos.
-- [ ] Reemplazar imágenes y textos de muestra; completar títulos, descripciones, precios, añadas, bodegas, regiones, stock y fotos autorizadas.
-- [ ] Confirmar por escrito las políticas comerciales: entrega/retiro, cobertura geográfica, cambios, cancelaciones, privacidad, edad mínima y tratamiento de datos personales. Publicar únicamente condiciones aprobadas por el negocio.
-- [ ] Revisar accesibilidad básica: navegación por teclado, contraste, etiquetas de formularios, textos alternativos y mensajes de error.
-- [ ] Probar que no se pueda enviar un pedido con carrito vacío o productos sin stock. Como el contacto final es WhatsApp, verificar los importes en el mensaje y confirmar que el dueño revalida precios y stock antes de aceptar.
-- [ ] Retirar o terminar controles que parezcan funcionales pero no lo sean, como el campo de cupón si no existe una lógica real de aplicación.
+- `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `AUTH_COOKIE_SECRET`.
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`.
+- `NEXT_PUBLIC_SITE_URL`.
 
-### SEO y analítica
+Verificar los nombres exactos. Evitar duplicados o errores tipográficos como `CLOUDINAY_*`. No pegar valores secretos en issues, chats, commits o capturas.
 
-- [ ] Configurar `NEXT_PUBLIC_SITE_URL` con la URL HTTPS definitiva. El sitio usa localhost como valor de reserva para metadata.
-- [ ] Completar metadata por página, títulos y descripciones, Open Graph, favicon e imágenes sociales con marca e imágenes autorizadas.
-- [ ] Crear y verificar `robots.txt` y `sitemap.xml`; excluir rutas privadas como admin y APIs del contenido indexable.
-- [ ] Añadir datos estructurados solo cuando reflejen información real y verificable del negocio.
-- [ ] Decidir si se necesita analítica. Si se incorpora, documentar cookies/consentimiento y mantener la recolección en el mínimo necesario.
+## Flujo para cambios que pida el cliente
 
-## Hosting y base de datos
+1. Confirmar el pedido del cliente y delimitar qué páginas, datos o reglas comerciales cambiarán.
+2. Actualizar la rama local de trabajo desde `origin/preparacion-vercel`.
+3. Crear una rama de trabajo, por ejemplo `feature/ajuste-catalogo`.
+4. Hacer el cambio y probar `npm run lint` y `npm run build`; agregar pruebas según el riesgo.
+5. Subir la rama de trabajo. Vercel debe generar un Preview; revisar la vista y probar el flujo afectado sin exponer Production.
+6. Abrir un Pull Request hacia `preparacion-vercel`, revisar el diff y mergear solo con aprobación.
+7. El merge a `preparacion-vercel` genera el despliegue Production. Revisar logs, inicio, catálogo, `/admin` y WhatsApp.
+8. No cambiar `main` ni el dominio/DNS sin que sea parte del pedido aprobado.
 
-### Opción recomendada: plataforma administrada
+Si se modifica el schema Prisma, crear y revisar una migración PostgreSQL; aplicar `npm run db:deploy` con `DATABASE_URL_UNPOOLED` antes o durante una ventana controlada de despliegue. No usar `prisma db push` en producción. No ejecutar `prisma db seed` en cada deploy.
 
-Para desplegar Next.js en una plataforma serverless o administrada, usar PostgreSQL administrado:
+## Dominio y DNS
 
-1. Crear una base PostgreSQL de producción y una base separada para pruebas/staging. En Neon, usar la URL pooled para la app y la URL directa para migraciones.
-2. El proyecto ya declara `provider = "postgresql"` y contiene una migración inicial PostgreSQL. Si aparecen datos del sitio anterior, definir una importación aparte antes de producción.
-3. Probar la migración inicial sobre la base de staging antes de producción.
-4. Ejecutar `npm run db:deploy` como paso de despliegue controlado. No usar `prisma db push` para actualizar producción. El seed inicial crea categorías y un solo admin si ese email todavía no existe; ejecutarlo únicamente con las credenciales de producción correctas.
-5. Verificar conexiones, límites del proveedor y estrategia de backup/restauración.
-6. Conectar el repositorio a la plataforma, seleccionar la carpeta `su-bodega` como raíz del proyecto y usar Node.js LTS compatible con Next.js 15.
-7. Configurar el comando de instalación/build de acuerdo con el proveedor. El build del proyecto es `npm run build`; el servidor Node tradicional arranca con `npm start`.
-8. Configurar variables de entorno de forma independiente para Preview/Staging y Production.
+- NIC.ar sigue siendo el registrador; la zona DNS está en Ferozo.
+- El A del dominio raíz apunta a Vercel (`216.198.79.1` según el panel consultado).
+- Se quitó el AAAA raíz antiguo que causaba configuración SSL conflictiva.
+- `www` mantiene CNAME al dominio raíz; verificar su estado en Vercel Domains.
+- No cambiar nameservers ni borrar SOA/NS, MX, FTP, autoconfig/autodiscover u otros registros no web.
+- El correo personal del dueño es Hotmail y no depende del DNS del dominio.
 
-### Alternativa: servidor con disco persistente
+## Tareas de seguimiento
 
-Se puede mantener SQLite si se usa una instancia Node.js con volumen persistente, permisos correctos, backups externos y restauración probada. Confirmar que el proceso escribe siempre en el mismo archivo y que no se escale a múltiples réplicas que accedan concurrentemente a SQLite. No asumir que el disco local de cualquier PaaS persiste tras reinicios o despliegues.
+- Probar una subida real de fotos con las credenciales Cloudinary nuevas.
+- Revisar en Vercel que no queden variables `CLOUDINAY_*` mal escritas/duplicadas.
+- Repetir `npm audit` en la rama actual y planificar remediación; una instalación anterior reportó cinco vulnerabilidades (cuatro altas y una crítica).
+- Confirmar precios, inventario, textos, fotos autorizadas, horarios y condiciones de entrega con el cliente.
+- Decidir si se necesita guardar pedidos en Neon o si WhatsApp seguirá siendo el único registro operativo.
+- Completar SEO y revisar accesibilidad/móvil.
 
-## Variables de producción
+## Referencias
 
-Definirlas en el gestor de secretos del proveedor; nunca subir valores reales al repositorio:
-
-| Variable | Uso | Requisito de producción |
-| --- | --- | --- |
-| `DATABASE_URL` | Conexión de Prisma | URL de PostgreSQL tras la migración recomendada, o ruta absoluta/persistente para la alternativa SQLite |
-| `DATABASE_URL_UNPOOLED` | Migraciones Prisma | URL directa de Neon; la integración con Vercel puede configurarla automáticamente |
-| `ADMIN_PASSWORD` | Fallback de autenticación admin existente | Contraseña fuerte, única y no reutilizada; no dejar el valor de desarrollo. Idealmente retirar el fallback en favor de usuarios admin gestionados |
-| `AUTH_COOKIE_SECRET` | Firma de cookies | Cadena aleatoria larga, distinta por entorno |
-| `CLOUDINARY_CLOUD_NAME` | Cuenta de imágenes | Cuenta validada por el dueño |
-| `CLOUDINARY_API_KEY` | Subida de imágenes | Credencial nueva, no filtrada |
-| `CLOUDINARY_API_SECRET` | Subida de imágenes | Credencial nueva, no filtrada |
-| `NEXT_PUBLIC_SITE_URL` | Metadata y URL canónica | Dominio final con `https://`, sin barra final |
-
-No definir secretos con prefijo `NEXT_PUBLIC_`: Next.js los expone al navegador. Las variables `NEXT_PUBLIC_CLOUDINARY_*` no son necesarias para la carga actual de imágenes del lado servidor; no agregarlas salvo que se implemente expresamente una función que las requiera.
-
-## Dominio propio y DNS
-
-1. Elegir y registrar el dominio a nombre del negocio; habilitar renovación automática y MFA en la cuenta del registrador.
-2. Añadir el dominio en el proveedor de hosting y seguir los registros DNS exactos que indique esa plataforma. No inventar valores A/CNAME: cambian según proveedor.
-3. Configurar tanto el dominio raíz como `www` y decidir una URL canónica única. Redirigir la variante secundaria con redirección permanente.
-4. Esperar propagación DNS y comprobar HTTPS/certificado TLS emitido antes de anunciar el sitio.
-5. Actualizar `NEXT_PUBLIC_SITE_URL` al dominio canónico, desplegar de nuevo y validar enlaces sociales, metadata y previews.
-6. Configurar el correo del negocio por separado si se necesita email con el dominio. El flujo de compra actual no envía confirmaciones automáticas por correo.
-
-## Verificación de lanzamiento
-
-### En staging
-
-- [ ] `npm ci` instala desde el lockfile.
-- [ ] `npx prisma generate` completa sin errores.
-- [ ] `npm run db:deploy` termina correctamente en una base vacía de staging.
-- [ ] `npm run lint` y `npm run build` pasan.
-- [ ] Admin: acceso correcto, logout, rechazo de sesión inválida y operaciones protegidas.
-- [ ] Catálogo: productos visibles, fotos Cloudinary, filtros y detalle.
-- [ ] WhatsApp: carrito con varios productos, cantidades, total y enlace al número comercial correcto.
-- [ ] Móvil real: encabezado, catálogo, carrito y apertura de WhatsApp.
-- [ ] Logs y monitoreo: errores de servidor visibles para el responsable, sin imprimir contraseñas ni secretos.
-- [ ] Backup de base de datos creado y restauración probada.
-
-### Publicación
-
-- [ ] Crear backup final antes de migraciones o cambios de datos.
-- [ ] Desplegar la versión revisada y ejecutar migraciones según el procedimiento del proveedor.
-- [ ] Confirmar dominio canónico, HTTPS, redirección `www`, metadata, redes sociales y WhatsApp.
-- [ ] Hacer una compra de prueba con el dueño, verificar mensaje y coordinación, y luego limpiar cualquier dato de prueba.
-- [ ] Tener a mano un procedimiento para volver al despliegue anterior y restaurar la base de datos.
-- [ ] Avisar al dueño cómo entrar al admin, cambiar stock/precios, cargar fotos y a quién contactar ante una falla.
-
-## Operación continua
-
-- Actualizar dependencias con revisión y build en staging; no aplicar actualizaciones forzadas directamente en producción.
-- Revisar alertas, disponibilidad, logs, backups, caducidad del dominio, certificado y facturación del hosting/Cloudinary.
-- Probar periódicamente la restauración de backups y los flujos de login, catálogo y WhatsApp.
-- Rotar credenciales cuando cambien responsables o haya sospecha de exposición.
-- Mantener inventario, precios, promociones, horarios y direcciones al día.
-
-## Enlaces del proyecto
-
+- [README de la aplicación](README.md)
 - [Setup local](SETUP.md)
-- [README](README.md)
-- [Schema Prisma](prisma/schema.prisma)
+- [Resumen técnico](../IMPLEMENTACIONES.md)
+- [Pendientes](../TODO.md)
