@@ -24,7 +24,7 @@ Editá `.env` y ajustá variables si es necesario. Para navegar y probar el cat�
 
 ```
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE?sslmode=require"
-DIRECT_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE?sslmode=require"
+DATABASE_URL_UNPOOLED="postgresql://USER:PASSWORD@HOST:5432/DATABASE?sslmode=require"
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloud-name
 NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=your-unsigned-preset
 ```

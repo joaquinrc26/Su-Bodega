@@ -72,7 +72,7 @@ Definirlas en el gestor de secretos del proveedor; nunca subir valores reales al
 | Variable | Uso | Requisito de producción |
 | --- | --- | --- |
 | `DATABASE_URL` | Conexión de Prisma | URL de PostgreSQL tras la migración recomendada, o ruta absoluta/persistente para la alternativa SQLite |
-| `DIRECT_URL` | Migraciones Prisma | URL directa de PostgreSQL; en Neon, usar la cadena no pooled |
+| `DATABASE_URL_UNPOOLED` | Migraciones Prisma | URL directa de Neon; la integración con Vercel puede configurarla automáticamente |
 | `ADMIN_PASSWORD` | Fallback de autenticación admin existente | Contraseña fuerte, única y no reutilizada; no dejar el valor de desarrollo. Idealmente retirar el fallback en favor de usuarios admin gestionados |
 | `AUTH_COOKIE_SECRET` | Firma de cookies | Cadena aleatoria larga, distinta por entorno |
 | `CLOUDINARY_CLOUD_NAME` | Cuenta de imágenes | Cuenta validada por el dueño |
