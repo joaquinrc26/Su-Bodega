@@ -2,13 +2,13 @@
 
 import { useMemo } from 'react';
 import { usePathname } from 'next/navigation';
-
-const WHATSAPP_URL =
-  'https://wa.me/5492214366342?text=Hola%20Su%20Bodega%2C%20soy%20comprador%20y%20quiero%20asesoramiento%20sobre%20vinos%20y%20promociones.%20%C2%BFMe%20pueden%20ayudar%3F';
-const INSTAGRAM_URL = 'https://www.instagram.com/subodega/';
+import { useSiteContent } from '@/components/SiteContentProvider';
 
 export default function SocialFloatingButtons() {
   const pathname = usePathname();
+  const content = useSiteContent();
+  const whatsappUrl = `https://wa.me/${content['contact.whatsapp']}?text=${encodeURIComponent(content['contact.whatsappMessage'])}`;
+  const instagramUrl = content['contact.instagram'];
 
   const hideButtons = useMemo(() => {
     if (!pathname) return false;
@@ -22,7 +22,7 @@ export default function SocialFloatingButtons() {
   return (
     <div className="fixed right-4 bottom-4 z-50 flex flex-col gap-3">
       <a
-        href={WHATSAPP_URL}
+        href={whatsappUrl}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Contactar por WhatsApp"
@@ -34,8 +34,9 @@ export default function SocialFloatingButtons() {
         </svg>
       </a>
 
+      {instagramUrl && (
       <a
-        href={INSTAGRAM_URL}
+        href={instagramUrl}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Ver Instagram de Su Bodega"
@@ -46,6 +47,7 @@ export default function SocialFloatingButtons() {
           <path d="M7.75 2h8.5A5.76 5.76 0 0 1 22 7.75v8.5A5.76 5.76 0 0 1 16.25 22h-8.5A5.76 5.76 0 0 1 2 16.25v-8.5A5.76 5.76 0 0 1 7.75 2Zm0 1.9A3.85 3.85 0 0 0 3.9 7.75v8.5A3.85 3.85 0 0 0 7.75 20.1h8.5a3.85 3.85 0 0 0 3.85-3.85v-8.5a3.85 3.85 0 0 0-3.85-3.85h-8.5Zm9.4 1.45a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 1.9a3.1 3.1 0 1 0 0 6.2 3.1 3.1 0 0 0 0-6.2Z" />
         </svg>
       </a>
+      )}
     </div>
   );
 }

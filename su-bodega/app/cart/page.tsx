@@ -5,27 +5,33 @@ import Image from 'next/image';
 import { useCart } from '@/lib/cart-context';
 import { useState } from 'react';
 import { validateCartItems } from '@/lib/stock';
+import { useSiteContent } from '@/components/SiteContentProvider';
 
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity, clearCart, total } = useCart();
+  const c = useSiteContent();
   const [coupon, setCoupon] = useState('');
 
-  const shippingCost = total > 200000 ? 0 : 5000; // Envío gratis desde 200.000
+  const baseShipping = Number(c['shipping.cost']);
+  const freeShippingFrom = Number(c['shipping.freeFrom']);
+  const showShipping = baseShipping > 0;
+  const shippingCost = showShipping && !(freeShippingFrom > 0 && total >= freeShippingFrom) ? baseShipping : 0;
   const subtotal = total;
   const finalTotal = subtotal + shippingCost;
   const stockValidation = validateCartItems(cart.map((item) => ({ id: item.id, quantity: item.quantity, stock: item.stock })));
+  const cartPerks = [c['cart.perk1'], c['cart.perk2']].filter(Boolean);
   const whatsappMessage = [
-    'Hola Su Bodega, quiero coordinar este pedido:',
+    c['cart.messageIntro'],
     '',
     ...cart.map((item) => `- ${item.name} ${item.year} × ${item.quantity}: $${(item.price * item.quantity).toLocaleString('es-AR')}`),
     '',
     `Subtotal: $${subtotal.toLocaleString('es-AR')}`,
-    `Envío: ${shippingCost === 0 ? 'Gratis' : `$${shippingCost.toLocaleString('es-AR')}`}`,
+    ...(showShipping ? [`Envío: ${shippingCost === 0 ? 'Gratis' : `$${shippingCost.toLocaleString('es-AR')}`}`] : []),
     `Total: $${finalTotal.toLocaleString('es-AR')}`,
     '',
-    'Quedo atento/a para coordinar el pedido por WhatsApp.',
+    c['cart.messageOutro'],
   ].join('\n');
-  const whatsappHref = `https://wa.me/5492214366342?text=${encodeURIComponent(whatsappMessage)}`;
+  const whatsappHref = `https://wa.me/${c['contact.whatsapp']}?text=${encodeURIComponent(whatsappMessage)}`;
 
   return (
     <main className="min-h-screen buyer-bodegon-bg text-amber-50">
@@ -34,9 +40,9 @@ export default function CartPage() {
         <section className="wine-hero grain-overlay mb-10 p-6 md:p-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <span className="wine-section-label">Tu carrito</span>
-              <h1 className="text-4xl md:text-5xl font-playfair font-semibold mt-2">Revisar compra</h1>
-              <p className="mt-3 max-w-2xl text-amber-100/72">Enviá tu pedido por WhatsApp y coordiná directamente con Su Bodega.</p>
+              <span className="wine-section-label">{c['cart.kicker']}</span>
+              <h1 className="text-4xl md:text-5xl font-playfair font-semibold mt-2">{c['cart.title']}</h1>
+              <p className="mt-3 max-w-2xl text-amber-100/72">{c['cart.subtitle']}</p>
             </div>
             <Link href="/wines" className="text-gold hover:text-gold/80 underline">
               ← Volver al catálogo
@@ -145,16 +151,18 @@ export default function CartPage() {
                   <span>${subtotal.toLocaleString('es-AR')}</span>
                 </div>
 
-                <div className="flex justify-between text-sm">
-                  <span>Envío a CABA/AMBA</span>
-                  <span className={shippingCost === 0 ? 'text-gold' : ''}>
-                    {shippingCost === 0 ? 'GRATIS ✓' : `$${shippingCost.toLocaleString('es-AR')}`}
-                  </span>
-                </div>
+                {showShipping && (
+                  <div className="flex justify-between text-sm">
+                    <span>{c['shipping.label']}</span>
+                    <span className={shippingCost === 0 ? 'text-gold' : ''}>
+                      {shippingCost === 0 ? 'GRATIS ✓' : `$${shippingCost.toLocaleString('es-AR')}`}
+                    </span>
+                  </div>
+                )}
 
-                {total > 0 && total < 200000 && (
+                {showShipping && freeShippingFrom > 0 && total > 0 && total < freeShippingFrom && (
                   <p className="text-xs text-gold/70 italic">
-                    Falta ${(200000 - total).toLocaleString('es-AR')} para envío gratis
+                    Falta ${(freeShippingFrom - total).toLocaleString('es-AR')} para envío gratis
                   </p>
                 )}
               </div>
@@ -193,11 +201,11 @@ export default function CartPage() {
                 aria-disabled={!stockValidation.ok}
               >
                 <span aria-hidden="true">WhatsApp</span>
-                {stockValidation.ok ? 'Enviar pedido por WhatsApp' : 'Revisar stock'}
+                {stockValidation.ok ? c['cart.whatsappButton'] : 'Revisar stock'}
               </a>
 
               <p className="mb-4 text-center text-xs leading-5 text-amber-100/60">
-                El dueño confirmará disponibilidad, entrega y los detalles del pedido por WhatsApp.
+                {c['cart.note']}
               </p>
 
               <Link href="/wines" className="block w-full text-center px-4 py-3 border border-amber-100/20 rounded hover:border-gold text-amber-50">
@@ -211,16 +219,16 @@ export default function CartPage() {
                 </div>
               )}
 
-              <div className="mt-6 pt-6 border-t border-gold/10 text-xs text-amber-100/60 space-y-2">
-                <div className="flex gap-2">
-                  <span className="text-gold">✓</span>
-                  <span>Envío gratis a CABA y AMBA desde $200.000</span>
+              {cartPerks.length > 0 && (
+                <div className="mt-6 pt-6 border-t border-gold/10 text-xs text-amber-100/60 space-y-2">
+                  {cartPerks.map((perk) => (
+                    <div key={perk} className="flex gap-2">
+                      <span className="text-gold">✓</span>
+                      <span>{perk}</span>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex gap-2">
-                  <span className="text-gold">✓</span>
-                  <span>Coordinación directa del pedido por WhatsApp</span>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         )}

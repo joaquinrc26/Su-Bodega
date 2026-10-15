@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCart } from '@/lib/cart-context';
+import { useSiteContent } from '@/components/SiteContentProvider';
 
 type WinePhoto = { id: string; url: string };
 type GrapeType = { id: string; name: string };
@@ -23,6 +24,8 @@ type Wine = {
 
 export default function WineDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { addToCart } = useCart();
+  const content = useSiteContent();
+  const productNotes = [content['product.note1'], content['product.note2']].filter(Boolean);
   const [wine, setWine] = useState<Wine | null>(null);
   const [relatedWines, setRelatedWines] = useState<Wine[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -288,17 +291,13 @@ export default function WineDetailPage({ params }: { params: Promise<{ id: strin
               </Link>
             </div>
 
-            {/* Info Envío */}
-            <div className="wine-card p-4 text-sm space-y-2">
-              <div className="flex gap-2">
-                <span>🚚</span>
-                <span>Envío gratis a CABA y AMBA desde $200.000</span>
+            {productNotes.length > 0 && (
+              <div className="wine-card p-4 text-sm space-y-2">
+                {productNotes.map((note) => (
+                  <p key={note}>{note}</p>
+                ))}
               </div>
-              <div className="flex gap-2">
-                <span>💳</span>
-                <span>Hasta 6 cuotas sin interés en vinos</span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
 

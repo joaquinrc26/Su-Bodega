@@ -100,3 +100,9 @@ model OrderItem {
   price    Decimal
   quantity Int
 }
+
+model SiteSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

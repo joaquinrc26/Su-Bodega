@@ -16,7 +16,7 @@ export async function POST(request: Request) {
  }
 
  const body = await request.json();
- const { file } = body;
+ const { file, kind } = body;
  if (!file) return new Response('Missing file', { status: 400 });
 
  if (typeof file !== 'string' || !/^data:image\/(jpeg|png|webp);base64,/.test(file)) {
@@ -29,9 +29,13 @@ export async function POST(request: Request) {
 	 return new Response('La imagen supera el tamaño máximo de 5 MB.', { status: 400 });
  }
 
+ const transformation = kind === 'background'
+	 ? [{ width: 1920, crop: 'limit', fetch_format: 'auto', quality: 'auto' }]
+	 : [{ width: 1200, height: 1200, crop: 'fill', gravity: 'auto', fetch_format: 'auto', quality: 'auto' }];
+
  const result = await cloudinary.uploader.upload(file, {
 	 folder: 'su-bodega',
-	 transformation: [{ width: 1200, height: 1200, crop: 'fill', gravity: 'auto', fetch_format: 'auto', quality: 'auto' }],
+	 transformation,
  });
  return NextResponse.json({ url: result.secure_url });
  } catch (err) {

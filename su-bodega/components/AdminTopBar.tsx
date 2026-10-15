@@ -27,6 +27,12 @@ export default function AdminTopBar({ isAdmin }: AdminTopBarProps) {
             Dashboard
           </Link>
           <Link
+            href="/admin/content"
+            className="px-3 py-2 border rounded text-slate-100 border-slate-600 hover:border-gold text-sm"
+          >
+            Contenido del sitio
+          </Link>
+          <Link
             href="/wines"
             className="px-3 py-2 border rounded text-slate-100 border-slate-600 hover:border-gold text-sm"
           >

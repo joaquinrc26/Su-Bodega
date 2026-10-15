@@ -9,8 +9,8 @@
   --coal: #1d1d1d;
   --gold: #c8a96b;
   --white: #ffffff;
-  --font-playfair: var(--font-bodoni-moda);
-  --font-montserrat: var(--font-bodoni-moda);
+  --font-playfair: var(--site-title-font, var(--font-bodoni-moda));
+  --font-montserrat: var(--site-body-font, var(--font-bodoni-moda));
 }
 
 @theme inline {
@@ -23,8 +23,9 @@
   --color-gold: var(--gold);
   --color-white: var(--white);
 
-  --font-sans: var(--font-bodoni-moda);
-  --font-serif: var(--font-bodoni-moda);
+  --font-sans: var(--site-body-font, var(--font-bodoni-moda));
+  --font-serif: var(--site-title-font, var(--font-bodoni-moda));
+  --font-playfair: var(--site-title-font, var(--font-bodoni-moda));
 }
 
 * {
@@ -39,8 +40,8 @@ body {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: 'Bodoni Moda', var(--font-bodoni-moda), serif;
-  text-transform: uppercase;
+  font-family: var(--site-body-font, var(--font-bodoni-moda)), serif;
+  text-transform: var(--site-text-transform, uppercase);
 }
 
 body::before {
@@ -61,7 +62,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: 'Bodoni Moda', var(--font-bodoni-moda), serif;
+  font-family: var(--site-title-font, var(--font-bodoni-moda)), serif;
   letter-spacing: -0.02em;
 }
 
@@ -206,7 +207,7 @@ h6 {
   background-image:
     linear-gradient(90deg, rgba(13, 8, 6, 0.78) 0%, rgba(19, 10, 8, 0.48) 43%, rgba(19, 10, 8, 0.08) 100%),
     linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.2)),
-    url('/hero-cover.jpg');
+    var(--cover-image, url('/hero-cover.jpg'));
   background-position: center;
   background-size: cover;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
@@ -254,21 +255,21 @@ h6 {
 .home-category-unique {
   background-image:
     linear-gradient(180deg, rgba(12, 7, 5, 0.28), rgba(12, 7, 5, 0.9)),
-    url('/vinos-unicos.jpg');
+    var(--card-guardados-image, url('/vinos-unicos.jpg'));
   background-position: center;
 }
 
 .home-category-varietals {
   background-image:
     linear-gradient(180deg, rgba(12, 7, 5, 0.28), rgba(12, 7, 5, 0.9)),
-    url('/varietales.jpg');
+    var(--card-vinos-image, url('/varietales.jpg'));
   background-position: center;
 }
 
 .home-category-gifts {
   background-image:
     linear-gradient(180deg, rgba(12, 7, 5, 0.28), rgba(12, 7, 5, 0.9)),
-    url('/regaleria.jpg');
+    var(--card-regaleria-image, url('/regaleria.jpg'));
   background-position: center;
 }
 
@@ -277,7 +278,7 @@ h6 {
     min-height: 620px;
     background-image:
       linear-gradient(180deg, rgba(13, 8, 6, 0.45) 0%, rgba(13, 8, 6, 0.72) 72%, rgba(13, 8, 6, 0.86) 100%),
-      url('/hero-cover.jpg');
+      var(--cover-image, url('/hero-cover.jpg'));
   }
 }
 

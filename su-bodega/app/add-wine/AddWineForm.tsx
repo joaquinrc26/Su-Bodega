@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { resizeImageToDataUrl } from '@/lib/image-resize';
 
 type Grape = { id: string; name: string };
 type ProductCategory = { id: string; slug: string; name: string; isActive: boolean };
@@ -25,7 +26,7 @@ type WineRecord = {
 };
 
 const MAX_PHOTOS = 3;
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 25 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 export default function AddWineForm() {
@@ -106,7 +107,7 @@ export default function AddWineForm() {
       setMessage(
         !ALLOWED_IMAGE_TYPES.has(invalidFile.type)
           ? 'Usá imágenes JPG, PNG o WEBP.'
-          : 'Cada imagen puede pesar hasta 5 MB.'
+          : 'Cada imagen puede pesar hasta 25 MB.'
       );
       return;
     }
@@ -115,14 +116,11 @@ export default function AddWineForm() {
 
     Promise.all(
       selectedFiles.map(
-        (file) =>
-          new Promise<FilePreview>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve({ file, preview: String(reader.result) });
-            reader.readAsDataURL(file);
-          })
+        async (file): Promise<FilePreview> => ({ file, preview: await resizeImageToDataUrl(file, 1600) })
       )
-    ).then(setFilePreviews);
+    )
+      .then(setFilePreviews)
+      .catch(() => setMessage('No pudimos leer una de las imágenes. Probá con otra foto.'));
   }
 
   async function uploadFileServer(dataUrl: string) {

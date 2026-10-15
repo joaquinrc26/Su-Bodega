@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCart } from '@/lib/cart-context';
+import { useSiteContent } from '@/components/SiteContentProvider';
 
 type WinePhoto = { id: string; url: string };
 type GrapeType = { id: string; name: string };
@@ -27,6 +28,7 @@ type SectionType = 'vinos' | 'guardados' | 'regaleria';
 
 export default function WinesPage() {
   const { addToCart, itemCount } = useCart();
+  const c = useSiteContent();
   const [wines, setWines] = useState<Wine[]>([]);
   const [grapes, setGrapes] = useState<GrapeType[]>([]);
   const [loading, setLoading] = useState(false);
@@ -152,26 +154,10 @@ export default function WinesPage() {
     return result;
   }, [sectionWines, searchName, filterYear, filterGrape, filterRegion, sortBy]);
 
-  const sectionCopy = useMemo(() => {
-    if (section === 'guardados') {
-      return {
-        title: 'Vinos únicos',
-        subtitle: 'Seleccion curada y cargada manualmente por administracion.',
-      };
-    }
-
-    if (section === 'regaleria') {
-      return {
-        title: 'Regalería',
-        subtitle: 'Regalos y accesorios seleccionados por la bodega.',
-      };
-    }
-
-    return {
-      title: 'Vinos',
-      subtitle: 'Catalogo principal de vinos, cargado manualmente por administracion.',
-    };
-  }, [section]);
+  const sectionCopy = useMemo(() => ({
+    title: c[`sec.${section}.name`],
+    subtitle: c[`sec.${section}.subtitle`],
+  }), [section, c]);
 
   const handleAddToCart = (e: React.MouseEvent, wine: Wine) => {
     e.preventDefault();
@@ -200,13 +186,13 @@ export default function WinesPage() {
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em] text-amber-100/55">
-                <span>Su Bodega</span>
+                <span>{c['brand.name']}</span>
                 <span className="text-gold/70">/</span>
-                <span className="text-gold">Colección</span>
+                <span className="text-gold">{c['catalog.kicker']}</span>
               </div>
-              <h1 className="max-w-3xl text-5xl font-playfair leading-[0.95] md:text-7xl">La colección</h1>
+              <h1 className="max-w-3xl text-5xl font-playfair leading-[0.95] md:text-7xl">{c['catalog.title']}</h1>
               <p className="max-w-2xl text-amber-100/80 leading-7">
-                Etiquetas elegidas para descubrir, regalar y disfrutar. Encontrá tu próxima botella en una selección cuidada por Su Bodega.
+                {c['catalog.description']}
               </p>
             </div>
 
@@ -250,8 +236,8 @@ export default function WinesPage() {
                   : 'border-amber-100/20 bg-black/15 text-amber-100 hover:border-gold/70'
               }`}
             >
-              <span className="text-xs uppercase tracking-[0.2em]">01 · Tintos, blancos y rosados</span>
-              <span className="mt-2 flex items-center justify-between text-lg font-semibold">Vinos <small>{sectionCounts.vinos}</small></span>
+              <span className="text-xs uppercase tracking-[0.2em]">01 · {c['sec.vinos.tab']}</span>
+              <span className="mt-2 flex items-center justify-between text-lg font-semibold">{c['sec.vinos.name']} <small>{sectionCounts.vinos}</small></span>
             </button>
             <button
               type="button"
@@ -262,8 +248,8 @@ export default function WinesPage() {
                   : 'border-amber-100/20 bg-black/15 text-amber-100 hover:border-gold/70'
               }`}
             >
-              <span className="text-xs uppercase tracking-[0.2em]">02 · Tiempo y carácter</span>
-              <span className="mt-2 flex items-center justify-between text-lg font-semibold">Vinos únicos <small>{sectionCounts.guardados}</small></span>
+              <span className="text-xs uppercase tracking-[0.2em]">02 · {c['sec.guardados.tab']}</span>
+              <span className="mt-2 flex items-center justify-between text-lg font-semibold">{c['sec.guardados.name']} <small>{sectionCounts.guardados}</small></span>
             </button>
             <button
               type="button"
@@ -274,8 +260,8 @@ export default function WinesPage() {
                   : 'border-amber-100/20 bg-black/15 text-amber-100 hover:border-gold/70'
               }`}
             >
-              <span className="text-xs uppercase tracking-[0.2em]">03 · Para celebrar</span>
-              <span className="mt-2 flex items-center justify-between text-lg font-semibold">Regalería <small>{sectionCounts.regaleria}</small></span>
+              <span className="text-xs uppercase tracking-[0.2em]">03 · {c['sec.regaleria.tab']}</span>
+              <span className="mt-2 flex items-center justify-between text-lg font-semibold">{c['sec.regaleria.name']} <small>{sectionCounts.regaleria}</small></span>
             </button>
           </nav>
         </header>
@@ -413,7 +399,7 @@ export default function WinesPage() {
         ) : filteredWines.length === 0 ? (
           <section className="buyer-paper rounded-2xl p-10 text-center">
             <p className="text-xl">No hay productos en esta seccion con los filtros actuales.</p>
-            <p className="text-amber-100/70 mt-2">Esta vista solo muestra productos cargados previamente por administracion.</p>
+            <p className="text-amber-100/70 mt-2">{c['catalog.empty']}</p>
           </section>
         ) : (
           <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
