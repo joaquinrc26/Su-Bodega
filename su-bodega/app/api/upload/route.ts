@@ -35,7 +35,9 @@ export async function POST(request: Request) {
  });
  return NextResponse.json({ url: result.secure_url });
  } catch (err) {
- const errorMsg = err instanceof Error ? err.message : 'No pudimos subir la imagen.';
+ console.error('Error al subir imagen a Cloudinary:', err);
+ // El SDK de Cloudinary rechaza con objetos planos { message, http_code }, no con Error.
+ const errorMsg = (err as { message?: string } | null)?.message || 'No pudimos subir la imagen.';
  return NextResponse.json({ error: errorMsg }, { status: 500 });
  }
 }
