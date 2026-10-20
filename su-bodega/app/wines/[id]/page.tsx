@@ -47,14 +47,15 @@ export default function WineDetailPage({ params }: { params: Promise<{ id: strin
     async function fetchWine() {
       try {
         setLoading(true);
-        const res = await fetch(`/api/wines?id=${id}`);
+        const res = await fetch(`/api/wines/${id}`);
+        if (!res.ok) {
+          setWine(null);
+          return;
+        }
         const data = await res.json();
 
-        if (Array.isArray(data) && data.length > 0) {
-          setWine(data[0]);
-        } else {
-          setWine(null);
-        }
+        setSelectedImageIndex(0);
+        setWine(data?.id === id ? data : null);
       } catch {
         setWine(null);
       } finally {
