@@ -209,11 +209,19 @@ export const FIELDS = [
 
   {
     key: 'contact.whatsapp',
-    label: 'Número de WhatsApp del negocio',
+    label: 'WhatsApp · Sucursal Calle 35 Nº693',
     group: 'Contacto',
     type: 'phone',
     default: '5492214366342',
-    help: 'Solo números, con código de país. Argentina: 549 + código de área + número, sin 0 ni 15.',
+    help: 'Botón flotante identificado con 35. Solo números y código de país.',
+  },
+  {
+    key: 'contact.whatsapp9',
+    label: 'WhatsApp · Sucursal Calle 9 Nº605',
+    group: 'Contacto',
+    type: 'phone',
+    default: '5492214286366',
+    help: 'Botón flotante identificado con 9. Solo números y código de país.',
   },
   {
     key: 'contact.whatsappMessage',

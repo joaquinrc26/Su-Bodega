@@ -52,7 +52,9 @@ export default function AddWineForm() {
   const [maridaje, setMaridaje] = useState('');
 
   // Fotos
+  const [existingPhotos, setExistingPhotos] = useState<WinePhoto[]>([]);
   const [filePreviews, setFilePreviews] = useState<FilePreview[]>([]);
+  const [processingPhotos, setProcessingPhotos] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -88,15 +90,13 @@ export default function AddWineForm() {
       .catch(() => setCategories([]));
   }, []);
 
-  function handleFileChange(files?: FileList | null) {
-    if (!files) {
-      setFilePreviews([]);
-      return;
-    }
+  async function handleFileChange(files?: FileList | null) {
+    if (!files?.length) return;
 
     const selectedFiles = Array.from(files);
-    if (selectedFiles.length > MAX_PHOTOS) {
-      setMessage(`Podés cargar hasta ${MAX_PHOTOS} fotos por producto.`);
+    const availableSlots = MAX_PHOTOS - existingPhotos.length - filePreviews.length;
+    if (selectedFiles.length > availableSlots) {
+      setMessage(`Podés cargar hasta ${MAX_PHOTOS} fotos por producto. Te quedan ${Math.max(availableSlots, 0)} lugar(es).`);
       return;
     }
 
@@ -113,14 +113,19 @@ export default function AddWineForm() {
     }
 
     setMessage(null);
-
-    Promise.all(
-      selectedFiles.map(
-        async (file): Promise<FilePreview> => ({ file, preview: await resizeImageToDataUrl(file, 1600) })
-      )
-    )
-      .then(setFilePreviews)
-      .catch(() => setMessage('No pudimos leer una de las imágenes. Probá con otra foto.'));
+    setProcessingPhotos(true);
+    try {
+      const previews = await Promise.all(
+        selectedFiles.map(
+          async (file): Promise<FilePreview> => ({ file, preview: await resizeImageToDataUrl(file, 1600) })
+        )
+      );
+      setFilePreviews((current) => [...current, ...previews]);
+    } catch {
+      setMessage('No pudimos leer una de las imágenes. Probá con otra foto.');
+    } finally {
+      setProcessingPhotos(false);
+    }
   }
 
   async function uploadFileServer(dataUrl: string) {
@@ -179,7 +184,7 @@ export default function AddWineForm() {
 
     setUploading(true);
     try {
-      const photos: string[] = [];
+      const photos = existingPhotos.map((photo) => photo.url);
 
       for (const preview of filePreviews) {
         photos.push(await uploadFileServer(preview.preview));
@@ -226,7 +231,7 @@ export default function AddWineForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...payload,
-          replacePhotos: Boolean(editingWineId && photos.length),
+          replacePhotos: Boolean(editingWineId),
         }),
       });
 
@@ -251,6 +256,7 @@ export default function AddWineForm() {
       setMaridaje('');
       setSelectedGrapeId(null);
       setNewGrapeName('');
+      setExistingPhotos([]);
       setFilePreviews([]);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Error durante la creación';
@@ -262,6 +268,10 @@ export default function AddWineForm() {
 
   function removePreview(index: number) {
     setFilePreviews((current) => current.filter((_, i) => i !== index));
+  }
+
+  function removeExistingPhoto(index: number) {
+    setExistingPhotos((current) => current.filter((_, i) => i !== index));
   }
 
   function editWine(wine: WineRecord) {
@@ -277,6 +287,7 @@ export default function AddWineForm() {
     setRegion(wine.region || '');
     setBodega(wine.bodega || '');
     setMaridaje(wine.maridaje || '');
+    setExistingPhotos(wine.photos);
     setFilePreviews([]);
     setMessage(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -296,6 +307,7 @@ export default function AddWineForm() {
     setRegion('');
     setBodega('');
     setMaridaje('');
+    setExistingPhotos([]);
     setFilePreviews([]);
     setMessage(null);
   }
@@ -574,7 +586,12 @@ export default function AddWineForm() {
                   type="file"
                   multiple
                   accept="image/jpeg,image/png,image/webp"
-                  onChange={(e) => handleFileChange(e.target.files)}
+                  disabled={processingPhotos || uploading}
+                  onChange={(e) => {
+                    const files = e.target.files;
+                    e.target.value = '';
+                    void handleFileChange(files);
+                  }}
                   className="hidden"
                   id="file-input"
                 />
@@ -584,17 +601,31 @@ export default function AddWineForm() {
                     Arrastra fotos aquí o{' '}
                     <span className="text-gold font-semibold">haz clic para seleccionar</span>
                   </p>
-                  <p className="text-xs text-amber-100/60 mt-2">Hasta 3 fotos · JPG, PNG o WEBP · Máximo 5 MB cada una · Podés agregarlas después</p>
+                  <p className="text-xs text-amber-100/60 mt-2">Hasta 3 fotos en total · JPG, PNG o WEBP · Podés agregarlas de a varias selecciones.</p>
                   <p className="text-xs text-gold/85 mt-1">Se guardan en formato cuadrado para el catálogo.</p>
                 </label>
               </div>
             </div>
 
-            {/* Previsualizaciones */}
-            {filePreviews.length > 0 && (
+            {(existingPhotos.length > 0 || filePreviews.length > 0) && (
               <div>
-                <p className="text-sm font-medium mb-4 text-amber-100/80">Fotos seleccionadas ({filePreviews.length})</p>
+                <p className="text-sm font-medium mb-4 text-amber-100/80">
+                  Fotos del producto ({existingPhotos.length + filePreviews.length}/{MAX_PHOTOS})
+                </p>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {existingPhotos.map((photo, index) => (
+                    <div key={photo.id} className="relative aspect-square group overflow-hidden rounded-lg border border-gold/15 bg-black/20">
+                      <Image src={photo.url} alt={`Foto actual ${index + 1}`} width={300} height={300} className="h-full w-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeExistingPhoto(index)}
+                        aria-label={`Quitar foto ${index + 1}`}
+                        className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity bg-black/50"
+                      >
+                        <span className="text-white text-3xl">✕</span>
+                      </button>
+                    </div>
+                  ))}
                   {filePreviews.map((preview, index) => (
                     <div
                       key={index}
