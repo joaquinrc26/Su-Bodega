@@ -122,7 +122,8 @@ export async function DELETE(request: Request, context: RouteContext) {
       prisma.wine.delete({ where: { id } }),
     ]);
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (error) {
+    console.error('Error al eliminar producto:', error);
     return new Response('No pudimos eliminar el producto', { status: 500 });
   }
 }

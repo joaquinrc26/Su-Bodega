@@ -90,10 +90,9 @@ export default function AddWineForm() {
       .catch(() => setCategories([]));
   }, []);
 
-  async function handleFileChange(files?: FileList | null) {
-    if (!files?.length) return;
+  async function handleFileChange(selectedFiles: File[]) {
+    if (!selectedFiles.length) return;
 
-    const selectedFiles = Array.from(files);
     const availableSlots = MAX_PHOTOS - existingPhotos.length - filePreviews.length;
     if (selectedFiles.length > availableSlots) {
       setMessage(`Podés cargar hasta ${MAX_PHOTOS} fotos por producto. Te quedan ${Math.max(availableSlots, 0)} lugar(es).`);
@@ -317,7 +316,8 @@ export default function AddWineForm() {
 
     const response = await fetch(`/api/wines/${wine.id}`, { method: 'DELETE' });
     if (!response.ok) {
-      setMessage('No pudimos eliminar el producto. Intentá nuevamente.');
+      const detail = await response.text().catch(() => '');
+      setMessage(`No pudimos eliminar el producto (${response.status}). ${detail}`.trim());
       return;
     }
 
@@ -588,7 +588,8 @@ export default function AddWineForm() {
                   accept="image/jpeg,image/png,image/webp"
                   disabled={processingPhotos || uploading}
                   onChange={(e) => {
-                    const files = e.target.files;
+                    // Copiar antes de limpiar el input: el FileList se vacía al resetearlo.
+                    const files = Array.from(e.target.files ?? []);
                     e.target.value = '';
                     void handleFileChange(files);
                   }}
@@ -620,9 +621,9 @@ export default function AddWineForm() {
                         type="button"
                         onClick={() => removeExistingPhoto(index)}
                         aria-label={`Quitar foto ${index + 1}`}
-                        className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity bg-black/50"
+                        className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white hover:bg-red-700"
                       >
-                        <span className="text-white text-3xl">✕</span>
+                        ✕
                       </button>
                     </div>
                   ))}
@@ -641,9 +642,10 @@ export default function AddWineForm() {
                       <button
                         type="button"
                         onClick={() => removePreview(index)}
-                        className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50"
+                        aria-label={`Quitar foto nueva ${index + 1}`}
+                        className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white hover:bg-red-700"
                       >
-                        <span className="text-white text-3xl">✕</span>
+                        ✕
                       </button>
                     </div>
                   ))}
